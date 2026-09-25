@@ -95,16 +95,26 @@ jobs:
 
 ---
 
-## ☁️ Option 4: Cloudflare Pages & Workers
-1. Log into your [Cloudflare Dashboard](https://dash.cloudflare.com/) (free tier).
-2. Go to **Workers & Pages** > **Pages** > **Connect to Git** (or deploy via Wrangler CLI).
+## ☁️ Option 4: Cloudflare Workers & Pages
+
+### A. Deploy via Cloudflare Workers CLI (wrangler)
+The app includes a pre-configured `wrangler.json` with Cloudflare Workers Static Assets:
+1. Build and deploy in one step:
+   ```bash
+   npm run deploy
+   ```
+   *(or `npm run build && npx wrangler deploy`)*
+2. Wrangler will read `wrangler.json`, upload the compiled `./dist` directory, and enable `single-page-application` routing so all JavaScript/CSS assets load properly without MIME type errors.
+
+### B. Deploy via Cloudflare Pages Dashboard
+1. Log into your [Cloudflare Dashboard](https://dash.cloudflare.com/).
+2. Go to **Workers & Pages** > **Create application** > **Pages** > **Connect to Git**.
 3. Select your repository.
-4. Set the **Framework preset** to **Vite**:
+4. Set the build settings:
+   - **Framework preset:** `Vite`
    - **Build command:** `npm run build`
    - **Build output directory:** `dist`
-5. Click **Save and Deploy**.
-
-*Note: Single Page App (SPA) fallback is configured in `public/_redirects` as `/*  /  200` to satisfy Cloudflare's loop validation (avoiding error 100324).*
+5. Click **Save and Deploy**. Cloudflare Pages automatically provides Single Page Application routing for Vite apps.
 
 ---
 
