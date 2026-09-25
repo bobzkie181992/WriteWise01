@@ -95,14 +95,16 @@ jobs:
 
 ---
 
-## ☁️ Option 4: Cloudflare Pages
+## ☁️ Option 4: Cloudflare Pages & Workers
 1. Log into your [Cloudflare Dashboard](https://dash.cloudflare.com/) (free tier).
-2. Go to **Workers & Pages** > **Pages** > **Connect to Git**.
+2. Go to **Workers & Pages** > **Pages** > **Connect to Git** (or deploy via Wrangler CLI).
 3. Select your repository.
 4. Set the **Framework preset** to **Vite**:
    - **Build command:** `npm run build`
    - **Build output directory:** `dist`
 5. Click **Save and Deploy**.
+
+*Note: Single Page App (SPA) fallback is configured in `public/_redirects` as `/*  /  200` to satisfy Cloudflare's loop validation (avoiding error 100324).*
 
 ---
 
