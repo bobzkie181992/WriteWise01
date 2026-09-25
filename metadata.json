@@ -1,0 +1,8 @@
+{
+  "name": "Remix Remix WriteWise",
+  "description": "A tiered AI-assisted academic writing and research scaffolding application for Grade 11 students to build original research papers.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

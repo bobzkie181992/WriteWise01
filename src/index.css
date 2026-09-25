@@ -1,0 +1,131 @@
+@import "tailwindcss";
+
+/* 
+ * WRITEWISE ROLE-BASED DYNAMIC THEME SYSTEM
+ * - Student & Landing Page Default: Green Theme (Forest Green primary, Emerald accent)
+ * - Teacher (Advisor): Orange Theme (Vibrant Orange primary, Amber accent)
+ */
+
+:root {
+  /* Default / Landing Theme: Green */
+  --color-primary: #15803d;
+  --color-primary-hover: #166534;
+  --color-primary-10: rgba(21, 128, 61, 0.1);
+  --color-primary-20: rgba(21, 128, 61, 0.2);
+  --color-primary-35: rgba(21, 128, 61, 0.35);
+  
+  --color-secondary: #059669;
+  --color-secondary-hover: #047857;
+  --color-secondary-10: rgba(5, 150, 105, 0.1);
+  --color-secondary-20: rgba(5, 150, 105, 0.2);
+}
+
+.theme-student {
+  /* Forest Green Theme */
+  --color-primary: #15803d;
+  --color-primary-hover: #166534;
+  --color-primary-10: rgba(21, 128, 61, 0.1);
+  --color-primary-20: rgba(21, 128, 61, 0.2);
+  --color-primary-35: rgba(21, 128, 61, 0.35);
+  
+  --color-secondary: #059669;
+  --color-secondary-hover: #047857;
+  --color-secondary-10: rgba(5, 150, 105, 0.1);
+  --color-secondary-20: rgba(5, 150, 105, 0.2);
+}
+
+.theme-teacher {
+  /* Vibrant Orange Theme */
+  --color-primary: #ea580c;
+  --color-primary-hover: #c2410c;
+  --color-primary-10: rgba(234, 88, 12, 0.1);
+  --color-primary-20: rgba(234, 88, 12, 0.2);
+  --color-primary-35: rgba(234, 88, 12, 0.35);
+  
+  --color-secondary: #d97706;
+  --color-secondary-hover: #b45309;
+  --color-secondary-10: rgba(217, 119, 6, 0.1);
+  --color-secondary-20: rgba(217, 119, 6, 0.2);
+}
+
+/* ==========================================
+   PRIMARY: NAVY (#17365D) -> DYNAMIC PRIMARY
+   ========================================== */
+.bg-\[\#17365D\] {
+  background-color: var(--color-primary) !important;
+}
+.text-\[\#17365D\] {
+  color: var(--color-primary) !important;
+}
+.border-\[\#17365D\] {
+  border-color: var(--color-primary) !important;
+}
+.text-\[\#17365D\]\/25 {
+  color: var(--color-primary) !important;
+  opacity: 0.25 !important;
+}
+.bg-\[\#17365D\]\/10 {
+  background-color: var(--color-primary-10) !important;
+}
+.border-\[\#17365D\]\/20 {
+  border-color: var(--color-primary-20) !important;
+}
+.border-\[\['#17365D'\]\]\/20 {
+  border-color: var(--color-primary-20) !important;
+}
+.border-\[\#17365D\]\/35 {
+  border-color: var(--color-primary-35) !important;
+}
+.from-\[\#17365D\] {
+  --tw-gradient-from: var(--color-primary) !important;
+  --tw-gradient-to: rgba(0, 0, 0, 0) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+/* ==========================================
+   SECONDARY: TEAL (#1F8A8A) -> DYNAMIC SECONDARY
+   ========================================== */
+.bg-\[\#1F8A8A\] {
+  background-color: var(--color-secondary) !important;
+}
+.text-\[\#1F8A8A\] {
+  color: var(--color-secondary) !important;
+}
+.border-\[\#1F8A8A\] {
+  border-color: var(--color-secondary) !important;
+}
+.bg-\[\#1F8A8A\]\/10 {
+  background-color: var(--color-secondary-10) !important;
+}
+.bg-\[\#1F8A8A\]\/20 {
+  background-color: var(--color-secondary-20) !important;
+}
+.text-\[\#1F8A8A\]\/25 {
+  color: var(--color-secondary) !important;
+  opacity: 0.25 !important;
+}
+.border-\[\#1F8A8A\]\/20 {
+  border-color: var(--color-secondary-20) !important;
+}
+.to-\[\#1F8A8A\] {
+  --tw-gradient-to: var(--color-secondary) !important;
+}
+.selection\:bg-\[\#1F8A8A\]\/20::selection {
+  background-color: var(--color-secondary-20) !important;
+}
+
+/* ==========================================
+   HOVER ACTIONS OVERRIDES
+   ========================================== */
+.hover\:bg-\[\#112643\]:hover {
+  background-color: var(--color-primary-hover) !important;
+}
+.hover\:bg-\[\#156161\]:hover {
+  background-color: var(--color-secondary-hover) !important;
+}
+.hover\:text-\[\#17365D\]:hover {
+  color: var(--color-primary) !important;
+}
+.hover\:text-\[\#1F8A8A\]:hover {
+  color: var(--color-secondary) !important;
+}
