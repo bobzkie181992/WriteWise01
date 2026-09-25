@@ -5,7 +5,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useWriteWise } from '../WriteWiseContext';
-import { BookOpen, CheckCircle, Save, Sparkles, ChevronRight, HelpCircle, RefreshCw, AlertTriangle, ArrowRight, History, ShieldCheck, FileText, Copy } from 'lucide-react';
+import { BookOpen, CheckCircle, Save, Sparkles, ChevronRight, HelpCircle, RefreshCw, AlertTriangle, ArrowRight, History, ShieldCheck, FileText, Copy, Plus } from 'lucide-react';
+import { IntelligentAutocomplete } from './IntelligentAutocomplete';
+import { AcademicDraftEditor } from './AcademicDraftEditor';
 
 export const WritingWorkspace: React.FC = () => {
   const { state, updatePaperSection, submitSectionForReview, getWordSuggestions, acceptWordSuggestion, triggerAIFeedbackRequest, deleteComment, showToast } = useWriteWise();
@@ -29,9 +31,24 @@ export const WritingWorkspace: React.FC = () => {
   const [plagiarismScore, setPlagiarismScore] = useState<number | null>(null);
   const [scanStep, setScanStep] = useState('');
 
-  // Autocomplete prediction state
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // Sentence Starter Tool State
+  const [starterInput, setStarterInput] = useState('');
+  const [showStarterBar, setShowStarterBar] = useState(false);
+
+  const handleInsertStarter = (completedPhrase: string) => {
+    const textToInsert = completedPhrase.trim();
+    if (!textToInsert) return;
+
+    setDraftText(prev => {
+      if (!prev.trim()) return textToInsert;
+      const needsSpace = !prev.endsWith(' ') && !prev.endsWith('\n');
+      return prev + (needsSpace ? ' ' : '') + textToInsert;
+    });
+
+    setSaveStatus('dirty');
+    setStarterInput('');
+    showToast(`Inserted "${textToInsert}" into draft!`, 'success');
+  };
 
   // Review & Check Outputs
   const [reviewResult, setReviewResult] = useState<{
@@ -62,17 +79,6 @@ export const WritingWorkspace: React.FC = () => {
     setScanStep('');
   }, [selectedSectionId]);
 
-  // Handle auto-save Simulation
-  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const text = e.target.value;
-    setDraftText(text);
-    setSaveStatus('dirty');
-
-    // Fetch word suggestions
-    const predict = getWordSuggestions(text);
-    setSuggestions(predict);
-  };
-
   // Explicit Save Draft
   const handleSaveDraft = () => {
     setSaveStatus('saving');
@@ -80,44 +86,6 @@ export const WritingWorkspace: React.FC = () => {
       updatePaperSection(selectedSectionId, draftText);
       setSaveStatus('saved');
     }, 400);
-  };
-
-  // Keyboard autocomplete acceptor
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (suggestions.length > 0) {
-      if (e.key === 'Tab' || e.key === 'Enter') {
-        e.preventDefault();
-        acceptSuggestion(suggestions[0]);
-      }
-    }
-  };
-
-  const acceptSuggestion = (word: string) => {
-    const trimmed = draftText.trim();
-    const wordsArr = trimmed.split(/\s+/);
-    
-    // Replace the partial last word or append
-    const lastWordMatch = trimmed.match(/([a-zA-Z]+)$/);
-    let newText = draftText;
-    
-    if (lastWordMatch) {
-      const partialWord = lastWordMatch[1];
-      if (word.startsWith(partialWord.toLowerCase())) {
-        newText = draftText.substring(0, draftText.length - partialWord.length) + word;
-      } else {
-        newText = draftText + ' ' + word;
-      }
-    } else {
-      newText = draftText + ' ' + word;
-    }
-
-    setDraftText(newText + ' ');
-    setSuggestions([]);
-    acceptWordSuggestion(selectedSectionId);
-    setSaveStatus('dirty');
-    if (textareaRef.current) {
-      textareaRef.current.focus();
-    }
   };
 
   // Review Draft (Runs originality process check & What to do next suggestion engine)
@@ -294,39 +262,74 @@ export const WritingWorkspace: React.FC = () => {
           {/* Card: Distraction-Free Editor Viewport */}
           <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm relative overflow-hidden">
             <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Writing Canvas</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Writing Canvas</span>
+                <button
+                  type="button"
+                  onClick={() => setShowStarterBar(!showStarterBar)}
+                  className="text-[10px] font-bold text-[#17365D] hover:underline flex items-center gap-1 bg-[#17365D]/10 px-2 py-0.5 rounded-full"
+                >
+                  <Sparkles className="h-3 w-3" />
+                  {showStarterBar ? 'Hide Starter Bar' : 'Quick Sentence Starters'}
+                </button>
+              </div>
               <span className="text-xs text-slate-500 font-mono">{draftText.trim() ? draftText.trim().split(/\s+/).length : 0} Words</span>
             </div>
 
-            <div className="p-5 space-y-4">
-              <textarea
-                ref={textareaRef}
-                value={draftText}
-                onChange={handleTextChange}
-                onKeyDown={handleKeyDown}
-                className="w-full min-h-[250px] text-sm text-slate-800 focus:outline-none resize-y leading-relaxed font-sans placeholder-slate-300"
-                placeholder="Compose your academic section draft directly here..."
-              ></textarea>
+            {/* Intelligent Sentence Starter & Autocomplete Bar */}
+            {showStarterBar && (
+              <div className="px-5 pt-4 pb-2 bg-gradient-to-r from-slate-50 to-blue-50/30 border-b border-slate-100">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1">
+                      <Sparkles className="h-3.5 w-3.5 text-[#1F8A8A]" />
+                      Intelligent Sentence Starter & Academic Completer
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      Press <kbd className="px-1 py-0.2 bg-white border border-slate-200 rounded font-mono text-[9px]">Tab</kbd> to complete
+                    </span>
+                  </div>
 
-              {/* Real-time Autocomplete Overlay */}
-              {suggestions.length > 0 && (
-                <div className="p-2 bg-slate-50 border border-slate-200/80 rounded-lg flex items-center gap-2 flex-wrap">
-                  <span className="text-[10px] text-[#1F8A8A] uppercase font-bold tracking-wider flex items-center gap-1">
-                    <Sparkles className="h-3 w-3" /> Predictive autocomplete (Tab / Click):
-                  </span>
-                  <div className="flex gap-1.5 flex-wrap">
-                    {suggestions.slice(0, 3).map((word, index) => (
-                      <button
-                        key={index}
-                        onClick={() => acceptSuggestion(word)}
-                        className="px-2.5 py-1 bg-white border border-slate-200 hover:border-[#1F8A8A] text-slate-700 text-xs font-semibold rounded shadow-sm hover:text-[#1F8A8A] transition-all whitespace-nowrap"
-                      >
-                        {word}
-                      </button>
-                    ))}
+                  <div className="flex gap-2 items-center">
+                    <div className="flex-1">
+                      <IntelligentAutocomplete
+                        value={starterInput}
+                        onChange={setStarterInput}
+                        onAccept={handleInsertStarter}
+                        placeholder="Type to trigger ghost autocomplete, e.g. 'according to...', 'academic...'"
+                        showAlternativesList={false}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleInsertStarter(starterInput)}
+                      disabled={!starterInput.trim()}
+                      className="px-3 py-2.5 bg-[#17365D] hover:bg-[#112643] text-white rounded-xl text-xs font-bold flex items-center gap-1 shrink-0 shadow-xs disabled:opacity-40 transition-all cursor-pointer"
+                      title="Insert completed phrase directly into draft"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Insert</span>
+                    </button>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
+
+            <div className="p-5 space-y-4">
+              <AcademicDraftEditor
+                value={draftText}
+                onChange={(newVal) => {
+                  setDraftText(newVal);
+                  setSaveStatus('dirty');
+                }}
+                onAcceptSuggestion={(acceptedPhrase) => {
+                  acceptWordSuggestion(selectedSectionId);
+                  showToast(`Accepted: "${acceptedPhrase}"`, 'success');
+                }}
+                placeholder="Compose your academic section draft directly here..."
+                sectionId={selectedSectionId}
+                minHeight="280px"
+              />
             </div>
 
             {/* Warning Message regarding Complete Essay Generators */}

@@ -16,7 +16,8 @@ import { AIUseProfile } from './components/AIUseProfile';
 import { Reflection } from './components/Reflection';
 import { PostSurvey } from './components/PostSurvey';
 import { TeacherDashboard } from './components/TeacherDashboard';
-import { BookOpen, LogOut, LayoutDashboard, PenTool, BookMarked, Layers, Compass, ShieldCheck, FileSignature, Award, Settings, User, Menu, X, CheckCircle, AlertTriangle, Users, FileText, Shield } from 'lucide-react';
+import { AutocompletePlayground } from './components/AutocompletePlayground';
+import { BookOpen, LogOut, LayoutDashboard, PenTool, BookMarked, Layers, Compass, ShieldCheck, FileSignature, Award, Settings, User, Menu, X, CheckCircle, AlertTriangle, Users, FileText, Shield, Sparkles } from 'lucide-react';
 
 function WriteWiseAppContent() {
   const { state, logout, toasts, removeToast } = useWriteWise();
@@ -27,7 +28,7 @@ function WriteWiseAppContent() {
 
   React.useEffect(() => {
     if (user && user.role === 'teacher') {
-      const teacherTabs = ['roster', 'assignments', 'validations', 'competencies', 'analytics'];
+      const teacherTabs = ['roster', 'assignments', 'validations', 'competencies', 'analytics', 'autocomplete'];
       if (!teacherTabs.includes(activeTab)) {
         setActiveTab('roster');
       }
@@ -182,6 +183,12 @@ function WriteWiseAppContent() {
                   >
                     <Award className="h-4 w-4 shrink-0" /> Finalized Paper
                   </button>
+                  <button
+                    onClick={() => handleNavigate('autocomplete')}
+                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${activeTab === 'autocomplete' ? 'bg-[#17365D] text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50/50'}`}
+                  >
+                    <Sparkles className="h-4 w-4 shrink-0 text-amber-400" /> Autocomplete Suite
+                  </button>
                 </>
               ) : (
                 <>
@@ -190,7 +197,8 @@ function WriteWiseAppContent() {
                     { id: 'assignments', name: 'Assignments & Rubrics', icon: FileText },
                     { id: 'validations', name: 'Expert Validation Register', icon: Shield },
                     { id: 'competencies', name: 'DepEd Competency Map', icon: Award },
-                    { id: 'analytics', name: 'Research & Writing Analytics', icon: Compass }
+                    { id: 'analytics', name: 'Research & Writing Analytics', icon: Compass },
+                    { id: 'autocomplete', name: 'Intelligent Autocomplete', icon: Sparkles }
                   ].map((tab) => {
                     const Icon = tab.icon;
                     return (
@@ -237,6 +245,7 @@ function WriteWiseAppContent() {
             <>
               {activeTab === 'dashboard' && <StudentDashboard onNavigate={handleNavigate} />}
               {activeTab === 'workspace' && <WritingWorkspace />}
+              {activeTab === 'autocomplete' && <AutocompletePlayground onNavigateToWorkspace={() => handleNavigate('workspace')} />}
               {activeTab === 'sources' && <ResearchSources />}
               {activeTab === 'skills' && <WritingSkills />}
               {activeTab === 'progress' && <StudentProgress />}
@@ -253,7 +262,11 @@ function WriteWiseAppContent() {
               )}
             </>
           ) : (
-            <TeacherDashboard activeTab={activeTab} />
+            activeTab === 'autocomplete' ? (
+              <AutocompletePlayground />
+            ) : (
+              <TeacherDashboard activeTab={activeTab} />
+            )
           )}
 
         </main>

@@ -9,6 +9,7 @@ import {
   PlusCircle, Search, Trash, Check, CheckCircle2, ShieldAlert, BookOpen, 
   AlertCircle, Bookmark, Table, Cpu, Sparkles, Copy, RefreshCw, FileText
 } from 'lucide-react';
+import { IntelligentAutocomplete } from './IntelligentAutocomplete';
 
 export const ResearchSources: React.FC = () => {
   const { state, addSource, verifySource, updateMatrixCell, showToast } = useWriteWise();
@@ -397,14 +398,27 @@ export const ResearchSources: React.FC = () => {
       {/* TAB 1: Source Bank & Log */}
       {activeTab === 'sources' && (
         <div className="space-y-6">
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-            <Search className="h-4 w-4 text-slate-400 shrink-0" />
-            <input
-              type="text"
-              placeholder="Search sources by author, keyword, or paper section..."
+          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5 uppercase tracking-wider">
+                <Search className="h-3.5 w-3.5 text-[#17365D]" />
+                Intelligent Source Search & Filter
+              </span>
+              <span className="text-[10px] text-slate-400">
+                {filteredSources.length} of {state.sources.length} sources matching
+              </span>
+            </div>
+            <IntelligentAutocomplete
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full text-xs text-slate-700 focus:outline-none font-sans"
+              onChange={setSearchTerm}
+              predefinedList={Array.from(new Set([
+                ...state.sources.map(s => s.author),
+                ...state.sources.map(s => s.title),
+                ...state.sources.map(s => s.intendedSection),
+                'Cruz', 'Santos', 'Dela Cruz', 'Social media', 'Sleep deprivation', 'Blended learning', 'Academic performance'
+              ])).filter(Boolean)}
+              placeholder="Search sources by author, keyword, or section (press Tab to accept)..."
+              showAlternativesList={false}
             />
           </div>
 

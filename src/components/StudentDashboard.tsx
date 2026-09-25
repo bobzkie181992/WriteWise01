@@ -134,6 +134,28 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onNavigate }
             </div>
           </div>
 
+          {/* Autocomplete Suite Featured Card */}
+          <div className="bg-gradient-to-r from-blue-50/90 via-indigo-50/60 to-emerald-50/60 p-4 sm:p-5 rounded-xl border border-blue-200/60 flex flex-wrap items-center justify-between gap-4 shadow-2xs">
+            <div className="flex items-center gap-3.5">
+              <div className="p-2.5 bg-[#17365D] text-white rounded-xl shadow-xs shrink-0">
+                <Sparkles className="h-5 w-5 text-amber-300" />
+              </div>
+              <div className="space-y-0.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#17365D] block">Writing Scaffolding Tool</span>
+                <h4 className="text-xs sm:text-sm font-bold text-slate-800">Intelligent Academic Autocomplete</h4>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  Type naturally and see inline light-gray predictive suggestions. Press <kbd className="px-1 py-0.2 bg-white rounded border border-slate-300 text-[10px] font-mono">Tab</kbd> or <kbd className="px-1 py-0.2 bg-white rounded border border-slate-300 text-[10px] font-mono">→</kbd> to accept.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => onNavigate('autocomplete')}
+              className="px-4 py-2 bg-[#17365D] hover:bg-[#112643] text-white text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
+            >
+              Open Autocomplete <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
           {/* Card: What to Do Next */}
           <div className="bg-white rounded-xl border border-[#D98E04]/20 shadow-sm overflow-hidden">
             <div className="p-5 border-b border-slate-100 bg-[#F4B942]/5 flex justify-between items-center">

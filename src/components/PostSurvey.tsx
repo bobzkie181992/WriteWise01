@@ -5,7 +5,8 @@
 
 import React, { useState } from 'react';
 import { useWriteWise } from '../WriteWiseContext';
-import { Award, Compass, FileText, ChevronRight, CheckCircle2, RefreshCw, AlertCircle, Printer, Download } from 'lucide-react';
+import { Award, Compass, FileText, ChevronRight, CheckCircle2, RefreshCw, AlertCircle, Printer, Download, Sparkles } from 'lucide-react';
+import { AutocompletePlayground } from './AutocompletePlayground';
 
 export const PostSurvey: React.FC = () => {
   const { state, savePostSurvey, updatePaperSection } = useWriteWise();
@@ -216,6 +217,26 @@ export const PostSurvey: React.FC = () => {
                 Proceed to Post-Survey <ChevronRight className="h-4 w-4" />
               </button>
             </div>
+          </div>
+
+          {/* Autocomplete Suite directly below the finalized paper */}
+          <div className="pt-6 border-t border-slate-200/80">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-[#17365D] text-white rounded-lg shadow-2xs">
+                  <Sparkles className="h-4 w-4 text-amber-300" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
+                    Academic Autocomplete Suite
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Practice academic phrasing, test scholarly vocabulary, and refine sentence structures directly below your finalized paper.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <AutocompletePlayground />
           </div>
         </div>
       )}
