@@ -435,6 +435,91 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onNavigateToWorkspace 
               </p>
             </div>
 
+            {/* Gamified XP & Quiz Achievements Card */}
+            {user.role === 'student' && (
+              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 space-y-5">
+                <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+                  <div className="p-2 bg-amber-500/10 text-amber-600 rounded-lg">
+                    <Award className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-bold text-slate-800 font-serif">Scholarly Achievements & XP Records</h2>
+                    <p className="text-[11px] text-slate-400 font-sans">Gamified metrics and completed competency assessments</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-sans">
+                  {/* XP Summary Widget */}
+                  <div className="p-4 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/40 rounded-xl space-y-3">
+                    <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block">Writer Level Progression</span>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-bold font-serif text-slate-800">Level {Math.floor((user.xp || 0) / 100) + 1}</span>
+                      <span className="text-slate-400 text-[10px]">({user.xp || 0} Total XP)</span>
+                    </div>
+                    {/* XP Progress Bar */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[10px] text-slate-500 font-bold">
+                        <span>XP Progress</span>
+                        <span>{(user.xp || 0) % 100} / 100 XP</span>
+                      </div>
+                      <div className="w-full bg-white/60 h-2 rounded-full overflow-hidden border border-amber-200/20">
+                        <div 
+                          className="bg-amber-500 h-full transition-all duration-300"
+                          style={{ width: `${(user.xp || 0) % 100}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Achievements Badge Status */}
+                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 flex flex-col justify-between">
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Unlocked Badges</span>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <span className="px-2 py-0.5 bg-sky-50 text-sky-700 rounded-md text-[9px] font-bold border border-sky-100 flex items-center gap-1">
+                          <Check className="h-2.5 w-2.5" /> Diagnostic Pioneer
+                        </span>
+                        {user.xp && user.xp >= 30 ? (
+                          <span className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded-md text-[9px] font-bold border border-amber-100 flex items-center gap-1">
+                            <Sparkles className="h-2.5 w-2.5" /> Competency Achiever
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-2 font-normal">Complete writing tasks and quiz reviews to unlock higher-tier academic badges.</p>
+                  </div>
+                </div>
+
+                {/* Score Log table */}
+                <div className="space-y-3 font-sans">
+                  <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider pl-1">Completed Assessments log</h3>
+                  {user.assessmentScores && Object.keys(user.assessmentScores).length > 0 ? (
+                    <div className="border border-slate-150 rounded-xl overflow-hidden divide-y divide-slate-100 text-xs">
+                      {Object.entries(user.assessmentScores).map(([id, record]) => (
+                        <div key={id} className="p-3 bg-slate-50/50 flex justify-between items-center">
+                          <div>
+                            <span className="font-bold text-slate-800 capitalize">{id.replace(/-/g, ' ')}</span>
+                            <span className="block text-[10px] text-slate-400 font-mono">
+                              Submitted: {new Date(record.submittedAt).toLocaleDateString()} at {new Date(record.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <div className="text-right">
+                            <span className="font-bold text-[#17365D] block">Score: {record.score} / {record.total}</span>
+                            <span className="text-[10px] font-bold text-amber-600">+{record.xpEarned} XP Awarded</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center p-6 bg-slate-50 border border-dashed border-slate-200 rounded-xl">
+                      <p className="text-xs text-slate-400 font-medium">No completed assessments recorded yet.</p>
+                      <p className="text-[10px] text-slate-400 mt-1">Take your Practical Research Competency Quiz in the navigation menu to test your skills and earn up to 30 XP!</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
           </div>
 
           {/* Right Column (4 cols): Account Security & Meta Summary */}

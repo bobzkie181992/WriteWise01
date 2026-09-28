@@ -19,6 +19,7 @@ import { TeacherDashboard } from './components/TeacherDashboard';
 import { AdminDashboard } from './components/AdminDashboard';
 import { AutocompletePlayground } from './components/AutocompletePlayground';
 import { UserProfile } from './components/UserProfile';
+import { AssessmentQuiz } from './components/AssessmentQuiz';
 import { PWAInstallButton } from './components/PWAInstallButton';
 import { NetworkStatusIndicator } from './components/NetworkStatusIndicator';
 import { 
@@ -227,6 +228,12 @@ function WriteWiseAppContent() {
                     <Layers className="h-4 w-4 shrink-0" /> Writing Modules
                   </button>
                   <button
+                    onClick={() => handleNavigate('assessment')}
+                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${activeTab === 'assessment' ? 'bg-[#17365D] text-[#F4B942] border border-[#F4B942]/30 shadow-sm' : 'text-slate-600 hover:bg-slate-50/50'}`}
+                  >
+                    <Award className="h-4 w-4 shrink-0 text-amber-500" /> Competency Quiz
+                  </button>
+                  <button
                     onClick={() => handleNavigate('progress')}
                     className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${activeTab === 'progress' ? 'bg-[#17365D] text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50/50'}`}
                   >
@@ -353,6 +360,7 @@ function WriteWiseAppContent() {
               {activeTab === 'autocomplete' && <AutocompletePlayground onNavigateToWorkspace={() => handleNavigate('workspace')} />}
               {activeTab === 'sources' && <ResearchSources />}
               {activeTab === 'skills' && <WritingSkills />}
+              {activeTab === 'assessment' && <AssessmentQuiz />}
               {activeTab === 'progress' && <StudentProgress />}
               {activeTab === 'aiprofile' && <AIUseProfile />}
               {activeTab === 'reflection' && <Reflection />}

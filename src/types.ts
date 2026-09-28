@@ -59,6 +59,9 @@ export interface User {
   password?: string;
   passwordLastChanged?: string;
   createdAt?: string;
+  xp?: number;
+  completedAssessments?: string[];
+  assessmentScores?: Record<string, { score: number; total: number; xpEarned: number; submittedAt: string }>;
 }
 
 export interface SurveyResponse {

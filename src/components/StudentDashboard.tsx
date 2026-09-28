@@ -33,7 +33,7 @@ interface StudentDashboardProps {
 export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onNavigate }) => {
   const { state } = useWriteWise();
   const paper = state.papers.find(p => p.studentId === (state.currentUser?.id || 'student-1')) || state.papers[0];
-  const user = state.currentUser || { name: 'Alex Marasigan', track: 'foundational' };
+  const user = state.currentUser || { name: 'Alex Marasigan', track: 'foundational', xp: 0 };
 
   // Calculate stats dynamically from paper data
   const totalSections = paper.sections.length;
@@ -294,6 +294,28 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onNavigate }
 
           {/* Card: Writing Progress Stats */}
           <div className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Writer Level & XP</h3>
+              <span className="px-1.5 py-0.5 rounded text-[8px] bg-amber-50 text-amber-700 font-bold uppercase border border-amber-200">Level {Math.floor((user.xp || 0) / 100) + 1}</span>
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-500 font-medium">XP Progress to Next Level</span>
+                <span className="font-bold text-[#17365D] font-mono">{(user.xp || 0) % 100} / 100 XP</span>
+              </div>
+              <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                <div 
+                  className="bg-gradient-to-r from-amber-500 to-[#1F8A8A] h-full transition-all duration-500" 
+                  style={{ width: `${(user.xp || 0) % 100}%` }}
+                ></div>
+              </div>
+              <p className="text-[10px] text-slate-400">Total Gamified XP Earned: <strong className="text-slate-600">{(user.xp || 0)} XP</strong>. Take quizzes and complete writing modules to earn more!</p>
+            </div>
+          </div>
+
+          {/* Card: Writing Progress Stats */}
+          <div className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm space-y-4">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Writing Progress</h3>
             
             <div className="grid grid-cols-2 gap-4">
@@ -367,6 +389,13 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onNavigate }
               >
                 <span className="flex items-center gap-2"><Layers className="h-4 w-4 text-[#1F8A8A]" /> Academic Writing Modules</span>
                 <ChevronRight className="h-4 w-4 text-slate-400" />
+              </button>
+              <button 
+                onClick={() => onNavigate('assessment')}
+                className="flex items-center justify-between p-2.5 hover:bg-slate-50 border border-slate-100 rounded-lg text-left text-slate-700 font-medium bg-amber-50/20 border-amber-100"
+              >
+                <span className="flex items-center gap-2 font-bold text-amber-800"><Award className="h-4 w-4 text-amber-600 animate-pulse" /> Take Competency Quiz (+30 XP)</span>
+                <ChevronRight className="h-4 w-4 text-amber-600" />
               </button>
               <button 
                 onClick={() => onNavigate('progress')}

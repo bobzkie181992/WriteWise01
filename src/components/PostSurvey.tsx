@@ -5,16 +5,18 @@
 
 import React, { useState } from 'react';
 import { useWriteWise } from '../WriteWiseContext';
-import { Award, Compass, FileText, ChevronRight, CheckCircle2, RefreshCw, AlertCircle, Printer, Download, Sparkles } from 'lucide-react';
+import { Award, Compass, FileText, ChevronRight, CheckCircle2, RefreshCw, AlertCircle, Printer, Download, Sparkles, FileDown, Check } from 'lucide-react';
 import { AutocompletePlayground } from './AutocompletePlayground';
+import { generateResearchPaperPDF } from '../utils/pdfExport';
 
 export const PostSurvey: React.FC = () => {
-  const { state, savePostSurvey, updatePaperSection } = useWriteWise();
+  const { state, savePostSurvey, updatePaperSection, showToast } = useWriteWise();
   const paper = state.papers.find(p => p.studentId === (state.currentUser?.id || 'student-1')) || state.papers[0];
 
   const [step, setStep] = useState<'preview' | 'survey' | 'results'>(
     paper.postSurvey ? 'results' : 'preview'
   );
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
 
   const [answers, setAnswers] = useState<Record<string, number>>({
     sews_ideation_1: 3,
@@ -91,8 +93,23 @@ export const PostSurvey: React.FC = () => {
     setStep('results');
   };
 
-  const handleDownload = () => {
-    alert('Exporting student-authored final paper to DOCX/PDF...');
+  const handleDownloadPDF = () => {
+    try {
+      setIsExportingPDF(true);
+      generateResearchPaperPDF({
+        paper,
+        user: state.currentUser,
+        sources: state.sources,
+        teacherName: 'Mrs. Maria Santos',
+        schoolName: 'Department of Education — Senior High School'
+      });
+      showToast('Formatted Research Paper PDF downloaded successfully!', 'success');
+    } catch (err) {
+      console.error('PDF export failed:', err);
+      showToast('Failed to generate PDF. Please try again or use Print.', 'warning');
+    } finally {
+      setIsExportingPDF(false);
+    }
   };
 
   // Pre vs Post comparative math
@@ -130,22 +147,37 @@ export const PostSurvey: React.FC = () => {
           <h2 className="text-xl font-bold font-serif text-slate-900">Finalized Original Formal Paper</h2>
           <p className="text-xs text-slate-500">Preview your full writing composition, submit post-survey reflection, and track your writing growth.</p>
         </div>
-        {step === 'results' && (
-          <div className="flex gap-2">
-            <button
-              onClick={handleDownload}
-              className="px-3.5 py-1.5 border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-bold text-slate-700 flex items-center gap-1"
-            >
-              <Download className="h-4 w-4" /> Export DOCX
-            </button>
-            <button
-              onClick={() => window.print()}
-              className="px-3.5 py-1.5 bg-[#17365D] hover:bg-[#112643] text-white rounded-lg text-xs font-bold flex items-center gap-1"
-            >
-              <Printer className="h-4 w-4" /> Print Paper
-            </button>
-          </div>
-        )}
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={handleDownloadPDF}
+            disabled={isExportingPDF}
+            className="px-3.5 py-2 bg-gradient-to-r from-[#17365D] to-[#1F8A8A] hover:opacity-95 text-white rounded-xl text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+            title="Download publication-ready APA 7th PDF with title page & citations"
+          >
+            {isExportingPDF ? (
+              <>
+                <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                <span>Generating PDF...</span>
+              </>
+            ) : (
+              <>
+                <FileDown className="h-4 w-4" />
+                <span>Download Formatted PDF</span>
+              </>
+            )}
+          </button>
+          
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="px-3.5 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+            title="Print research paper"
+          >
+            <Printer className="h-4 w-4 text-slate-500" />
+            <span>Print Manuscript</span>
+          </button>
+        </div>
       </div>
 
       {step === 'preview' && (
@@ -206,16 +238,28 @@ export const PostSurvey: React.FC = () => {
             <div className="p-5 bg-slate-50 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
               <span className="text-xs text-slate-500 font-sans">
                 {paper.progress === 100 
-                  ? 'All sections comply with the Practical Research standards. You are ready to complete your post-survey!' 
-                  : 'Please complete or simulate all paper sections to proceed.'}
+                  ? 'All sections comply with Practical Research standards. Download your manuscript or proceed to post-survey.' 
+                  : 'Please complete or simulate all paper sections to finalize.'}
               </span>
-              <button
-                disabled={paper.progress < 100}
-                onClick={() => setStep('survey')}
-                className="px-6 py-2.5 bg-[#17365D] hover:bg-[#112643] text-white text-xs font-semibold rounded-lg shadow-sm flex items-center gap-1.5 disabled:opacity-40 transition-all font-sans"
-              >
-                Proceed to Post-Survey <ChevronRight className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleDownloadPDF}
+                  disabled={isExportingPDF}
+                  className="px-4 py-2.5 border border-slate-300 hover:bg-white text-slate-700 text-xs font-bold rounded-lg shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <FileDown className="h-4 w-4 text-[#17365D]" />
+                  <span>Download PDF</span>
+                </button>
+
+                <button
+                  disabled={paper.progress < 100}
+                  onClick={() => setStep('survey')}
+                  className="px-6 py-2.5 bg-[#17365D] hover:bg-[#112643] text-white text-xs font-semibold rounded-lg shadow-sm flex items-center gap-1.5 disabled:opacity-40 transition-all font-sans cursor-pointer"
+                >
+                  Proceed to Post-Survey <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </div>
 

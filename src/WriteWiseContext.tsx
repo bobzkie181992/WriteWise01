@@ -99,6 +99,7 @@ interface WriteWiseContextType {
   exportSystemData: () => string;
   importSystemData: (jsonData: string) => boolean;
   resetData: () => void;
+  submitAssessmentScore: (assessmentId: string, score: number, total: number) => { xpEarned: number; totalXp: number };
 }
 
 const WriteWiseContext = createContext<WriteWiseContextType | undefined>(undefined);
@@ -1514,6 +1515,62 @@ export const WriteWiseProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     });
   };
 
+  const submitAssessmentScore = (assessmentId: string, score: number, total: number) => {
+    if (!state.currentUser) return { xpEarned: 0, totalXp: 0 };
+    
+    // Total XP for the assessment is 30.
+    // If score is perfect (score === total), student gets 30 XP.
+    // Otherwise, calculate how many points they get prorated: (score / total) * 30.
+    const xpEarned = Math.round((score / total) * 30);
+    
+    const currentCompleted = state.currentUser.completedAssessments || [];
+    const completedAssessments = currentCompleted.includes(assessmentId)
+      ? currentCompleted
+      : [...currentCompleted, assessmentId];
+      
+    const currentScores = state.currentUser.assessmentScores || {};
+    const previousScoreEntry = currentScores[assessmentId];
+    
+    // Only add new XP or update if they got a higher score or did it for the first time
+    const previousXp = previousScoreEntry ? previousScoreEntry.xpEarned : 0;
+    const xpDiff = Math.max(0, xpEarned - previousXp); // Ensure non-negative contribution
+    
+    const updatedScores = {
+      ...currentScores,
+      [assessmentId]: {
+        score,
+        total,
+        xpEarned: Math.max(previousXp, xpEarned),
+        submittedAt: new Date().toISOString()
+      }
+    };
+    
+    const newTotalXp = (state.currentUser.xp || 0) + xpDiff;
+    
+    setState(prev => {
+      if (!prev.currentUser) return prev;
+      const updatedUser = {
+        ...prev.currentUser,
+        xp: newTotalXp,
+        completedAssessments,
+        assessmentScores: updatedScores
+      };
+      
+      const updatedUsers = (prev.users || []).map(u => {
+        if (u.id === updatedUser.id) return updatedUser;
+        return u;
+      });
+      
+      return {
+        ...prev,
+        currentUser: updatedUser,
+        users: updatedUsers
+      };
+    });
+    
+    return { xpEarned, totalXp: newTotalXp };
+  };
+
   return (
     <WriteWiseContext.Provider
       value={{
@@ -1560,7 +1617,8 @@ export const WriteWiseProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         clearAuditLogs,
         exportSystemData,
         importSystemData,
-        resetData
+        resetData,
+        submitAssessmentScore
       }}
     >
       {children}

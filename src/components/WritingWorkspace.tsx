@@ -5,9 +5,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useWriteWise } from '../WriteWiseContext';
-import { BookOpen, CheckCircle, Save, Sparkles, ChevronRight, HelpCircle, RefreshCw, AlertTriangle, ArrowRight, History, ShieldCheck, FileText, Copy, Plus } from 'lucide-react';
+import { BookOpen, CheckCircle, Save, Sparkles, ChevronRight, HelpCircle, RefreshCw, AlertTriangle, ArrowRight, History, ShieldCheck, FileText, Copy, Plus, FileDown } from 'lucide-react';
 import { IntelligentAutocomplete } from './IntelligentAutocomplete';
 import { AcademicDraftEditor } from './AcademicDraftEditor';
+import { generateResearchPaperPDF } from '../utils/pdfExport';
 
 export const WritingWorkspace: React.FC = () => {
   const { state, updatePaperSection, submitSectionForReview, getWordSuggestions, acceptWordSuggestion, triggerAIFeedbackRequest, deleteComment, showToast } = useWriteWise();
@@ -696,6 +697,28 @@ export const WritingWorkspace: React.FC = () => {
                 <h2 className="text-lg font-bold font-serif">Compiled Research Paper Draft</h2>
               </div>
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    try {
+                      generateResearchPaperPDF({
+                        paper,
+                        user: state.currentUser,
+                        sources: state.sources,
+                        teacherName: 'Mrs. Maria Santos',
+                        schoolName: 'Department of Education — Senior High School'
+                      });
+                      showToast('Formatted Research Paper PDF downloaded!', 'success');
+                    } catch (e) {
+                      console.error(e);
+                      showToast('PDF generation failed.', 'warning');
+                    }
+                  }}
+                  className="px-3.5 py-1.5 bg-white text-[#17365D] hover:bg-slate-100 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  title="Download APA 7th Formatted PDF"
+                >
+                  <FileDown className="h-4 w-4 text-[#17365D]" /> Download PDF
+                </button>
                 <button
                   onClick={() => {
                     let fullText = `${paper.title}\n\n`;
