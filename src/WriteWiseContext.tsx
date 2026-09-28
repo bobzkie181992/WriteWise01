@@ -4,8 +4,37 @@
  */
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, Paper, Source, Assignment, CompetencyMapping, ExpertValidation, Rubric, AppState, LearningTrack, PaperSection, DraftVersion } from './types';
-import { DEMO_STUDENT, DEMO_TEACHER, DEFAULT_ASSIGNMENTS, DEFAULT_RUBRIC, DEFAULT_COMPETENCIES, DEFAULT_VALIDATIONS, INITIAL_PAPERS, INITIAL_SOURCES } from './sampleData';
+import { 
+  User, 
+  Paper, 
+  Source, 
+  Assignment, 
+  CompetencyMapping, 
+  ExpertValidation, 
+  Rubric, 
+  AppState, 
+  LearningTrack, 
+  PaperSection, 
+  DraftVersion,
+  SystemSettings,
+  AuditLogEntry,
+  GradeSection
+} from './types';
+import { 
+  DEMO_STUDENT, 
+  DEMO_TEACHER, 
+  DEMO_ADMIN,
+  INITIAL_USERS,
+  INITIAL_SECTIONS,
+  DEFAULT_SYSTEM_SETTINGS,
+  INITIAL_AUDIT_LOGS,
+  DEFAULT_ASSIGNMENTS, 
+  DEFAULT_RUBRIC, 
+  DEFAULT_COMPETENCIES, 
+  DEFAULT_VALIDATIONS, 
+  INITIAL_PAPERS, 
+  INITIAL_SOURCES 
+} from './sampleData';
 
 export interface ToastMessage {
   id: string;
@@ -18,8 +47,8 @@ interface WriteWiseContextType {
   toasts: ToastMessage[];
   showToast: (message: string, type: 'success' | 'warning') => void;
   removeToast: (id: string) => void;
-  login: (email: string, role: 'student' | 'teacher') => boolean;
-  register: (name: string, email: string, role: 'student' | 'teacher', grade?: string, section?: string) => void;
+  login: (email: string, role?: 'student' | 'teacher' | 'admin') => boolean;
+  register: (name: string, email: string, role: 'student' | 'teacher' | 'admin', grade?: string, section?: string) => void;
   logout: () => void;
   updateUserTrack: (studentId: string, track: LearningTrack) => void;
   updatePaperSection: (sectionId: string, content: string, status?: PaperSection['status']) => void;
@@ -45,14 +74,30 @@ interface WriteWiseContextType {
   getWordSuggestions: (text: string) => string[];
   acceptWordSuggestion: (sectionId: string) => void;
   triggerAIFeedbackRequest: (sectionId: string) => void;
-  addStudent: (name: string, section: string, track: LearningTrack) => void;
+  addStudent: (name: string, section: string, track: LearningTrack, gradeLevel?: string, strand?: string) => void;
   updateStudentName: (studentId: string, name: string) => void;
-  updateStudentSection: (studentId: string, section: string) => void;
+  updateStudentSection: (studentId: string, section: string, gradeLevel?: string, strand?: string) => void;
+  assignStudentSection: (studentId: string, section: string, gradeLevel?: string, strand?: string) => void;
   assignGrade: (studentId: string, grade: number | string) => void;
   deleteStudent: (studentId: string) => void;
   addComment: (studentId: string, sectionId: string, text: string, highlightText?: string) => void;
   deleteComment: (studentId: string, commentId: string) => void;
   updateMatrixCell: (studentId: string, rowSourceId: string, columnTheme: string, active: boolean, note?: string) => void;
+  updateUserProfile: (profileData: Partial<User>) => void;
+  changePassword: (currentPassword: string, newPassword: string) => { success: boolean; message: string };
+  // Admin Features
+  updateSystemSettings: (settings: Partial<SystemSettings>) => void;
+  adminCreateUser: (userData: Partial<User>) => void;
+  adminUpdateUser: (userId: string, data: Partial<User>) => void;
+  adminDeleteUser: (userId: string) => void;
+  adminResetPassword: (userId: string, newPassword?: string) => string;
+  adminAddSection: (sectionData: Omit<GradeSection, 'id'>) => void;
+  adminUpdateSection: (sectionId: string, data: Partial<GradeSection>) => void;
+  adminDeleteSection: (sectionId: string) => void;
+  addAuditLog: (action: string, category: AuditLogEntry['category'], details: string, status?: AuditLogEntry['status']) => void;
+  clearAuditLogs: () => void;
+  exportSystemData: () => string;
+  importSystemData: (jsonData: string) => boolean;
   resetData: () => void;
 }
 
@@ -77,19 +122,30 @@ export const WriteWiseProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const saved = localStorage.getItem('writewise_state');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        return {
+          ...parsed,
+          users: parsed.users || INITIAL_USERS,
+          systemSettings: parsed.systemSettings || DEFAULT_SYSTEM_SETTINGS,
+          auditLogs: parsed.auditLogs || INITIAL_AUDIT_LOGS,
+          sections: parsed.sections || INITIAL_SECTIONS
+        };
       } catch (e) {
         console.error('Failed to parse saved state, loading defaults', e);
       }
     }
     return {
       currentUser: null,
+      users: INITIAL_USERS,
       papers: INITIAL_PAPERS,
       sources: INITIAL_SOURCES,
       assignments: DEFAULT_ASSIGNMENTS,
       competencies: DEFAULT_COMPETENCIES,
       validations: DEFAULT_VALIDATIONS,
-      rubric: DEFAULT_RUBRIC
+      rubric: DEFAULT_RUBRIC,
+      systemSettings: DEFAULT_SYSTEM_SETTINGS,
+      auditLogs: INITIAL_AUDIT_LOGS,
+      sections: INITIAL_SECTIONS
     };
   });
 
@@ -97,10 +153,17 @@ export const WriteWiseProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     localStorage.setItem('writewise_state', JSON.stringify(state));
   }, [state]);
 
-  const login = (email: string, role: 'student' | 'teacher'): boolean => {
+  const login = (email: string, role?: 'student' | 'teacher' | 'admin'): boolean => {
     const cleanEmail = email.trim().toLowerCase();
     
     // Check demo accounts first
+    if (cleanEmail === 'admin@writewise.demo') {
+      setState(prev => ({
+        ...prev,
+        currentUser: DEMO_ADMIN
+      }));
+      return true;
+    }
     if (cleanEmail === 'student@writewise.demo') {
       setState(prev => ({
         ...prev,
@@ -113,6 +176,24 @@ export const WriteWiseProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         ...prev,
         currentUser: DEMO_TEACHER
       }));
+      return true;
+    }
+
+    if (role === 'admin') {
+      const existingUser = (state.users || INITIAL_USERS).find(u => u.email.toLowerCase() === cleanEmail && u.role === 'admin');
+      if (existingUser) {
+        setState(prev => ({ ...prev, currentUser: existingUser }));
+      } else {
+        setState(prev => ({
+          ...prev,
+          currentUser: {
+            ...DEMO_ADMIN,
+            id: 'admin-' + Math.random().toString(36).substring(2, 9),
+            name: email.split('@')[0],
+            email: cleanEmail
+          }
+        }));
+      }
       return true;
     }
 
@@ -190,8 +271,8 @@ export const WriteWiseProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
-  const register = (name: string, email: string, role: 'student' | 'teacher', grade?: string, section?: string) => {
-    const studentId = 'student-' + Math.random().toString(36).substring(2, 9);
+  const register = (name: string, email: string, role: 'student' | 'teacher' | 'admin', grade?: string, section?: string) => {
+    const studentId = (role || 'student') + '-' + Math.random().toString(36).substring(2, 9);
     const paperId = 'paper-' + Math.random().toString(36).substring(2, 9);
 
     const basePaper = state.papers[0] || INITIAL_PAPERS[0];
@@ -207,7 +288,7 @@ export const WriteWiseProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       lastSavedAt: ''
     }));
 
-    const cleanSection = section && grade ? `${grade} - ${section}` : section || grade || 'Grade 11 - STEM A';
+    const cleanSection = section && grade ? `${grade} - ${section}` : section || grade || (role === 'admin' ? 'Administration' : 'Grade 11 - STEM A');
 
     const newPaper: Paper = {
       id: paperId,
@@ -224,19 +305,26 @@ export const WriteWiseProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       reflectionCompleted: false
     };
 
-    const newUser = {
+    const newUser: User = {
       id: studentId,
       name,
       email: email.trim().toLowerCase(),
       role,
       track: 'foundational' as const,
-      classId: 'class-g11'
+      classId: role === 'admin' ? 'admin-division' : 'class-g11',
+      gradeLevel: grade || (role === 'student' ? 'Grade 11' : role === 'admin' ? 'Division Admin' : 'Faculty'),
+      section: cleanSection,
+      schoolName: state.systemSettings?.institutionName || 'Batangas National High School',
+      password: 'password123',
+      createdAt: new Date().toISOString()
     };
 
     setState(prev => {
       const updatedPapers = role === 'student' ? [...prev.papers, newPaper] : prev.papers;
+      const updatedUsers = [newUser, ...(prev.users || INITIAL_USERS)];
       return {
         ...prev,
+        users: updatedUsers,
         currentUser: newUser,
         papers: updatedPapers
       };
@@ -247,6 +335,396 @@ export const WriteWiseProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const logout = () => {
     setState(prev => ({ ...prev, currentUser: null }));
+  };
+
+  const updateUserProfile = (profileData: Partial<User>) => {
+    if (!state.currentUser) return;
+    const currentId = state.currentUser.id;
+
+    setState(prev => {
+      if (!prev.currentUser) return prev;
+      const updatedUser: User = {
+        ...prev.currentUser,
+        ...profileData,
+        id: prev.currentUser.id,
+        role: prev.currentUser.role
+      };
+
+      const updatedPapers = prev.papers.map(p => {
+        if (p.studentId === currentId) {
+          return {
+            ...p,
+            studentName: profileData.name !== undefined ? profileData.name : p.studentName,
+            studentSection: profileData.section !== undefined 
+              ? (profileData.gradeLevel ? `${profileData.gradeLevel} - ${profileData.section}` : profileData.section)
+              : p.studentSection
+          };
+        }
+        return p;
+      });
+
+      return {
+        ...prev,
+        currentUser: updatedUser,
+        papers: updatedPapers
+      };
+    });
+
+    showToast('Information profile successfully updated!', 'success');
+  };
+
+  const changePassword = (currentPassword: string, newPassword: string): { success: boolean; message: string } => {
+    if (!state.currentUser) {
+      return { success: false, message: 'You must be logged in to change your password.' };
+    }
+
+    const storedPassword = state.currentUser.password || 'password123';
+    if (currentPassword !== storedPassword) {
+      return { success: false, message: 'The current password you entered is incorrect.' };
+    }
+
+    if (!newPassword || newPassword.length < 6) {
+      return { success: false, message: 'New password must be at least 6 characters long.' };
+    }
+
+    if (newPassword === currentPassword) {
+      return { success: false, message: 'New password cannot be the same as your current password.' };
+    }
+
+    const now = new Date().toISOString();
+    setState(prev => {
+      if (!prev.currentUser) return prev;
+      return {
+        ...prev,
+        currentUser: {
+          ...prev.currentUser,
+          password: newPassword,
+          passwordLastChanged: now
+        }
+      };
+    });
+
+    showToast('Your password has been changed successfully!', 'success');
+    return { success: true, message: 'Password changed successfully.' };
+  };
+
+  // Admin Features Implementation
+  const addAuditLog = (
+    action: string, 
+    category: AuditLogEntry['category'], 
+    details: string, 
+    status: AuditLogEntry['status'] = 'info'
+  ) => {
+    const actorName = state.currentUser?.name || 'Administrator';
+    const actorRole = state.currentUser?.role || 'admin';
+    const newEntry: AuditLogEntry = {
+      id: 'log-' + Math.random().toString(36).substring(2, 9),
+      timestamp: new Date().toISOString(),
+      actor: actorName,
+      actorRole,
+      action,
+      category,
+      details,
+      status
+    };
+
+    setState(prev => ({
+      ...prev,
+      auditLogs: [newEntry, ...(prev.auditLogs || INITIAL_AUDIT_LOGS)]
+    }));
+  };
+
+  const clearAuditLogs = () => {
+    const resetEntry: AuditLogEntry = {
+      id: 'log-' + Math.random().toString(36).substring(2, 9),
+      timestamp: new Date().toISOString(),
+      actor: state.currentUser?.name || 'System Admin',
+      actorRole: 'admin',
+      action: 'AUDIT_LOGS_PURGED',
+      category: 'system',
+      details: 'Audit log archives cleared by administrator.',
+      status: 'warning'
+    };
+
+    setState(prev => ({
+      ...prev,
+      auditLogs: [resetEntry]
+    }));
+    showToast('Audit log history cleared.', 'warning');
+  };
+
+  const updateSystemSettings = (settings: Partial<SystemSettings>) => {
+    setState(prev => {
+      const merged = {
+        ...(prev.systemSettings || DEFAULT_SYSTEM_SETTINGS),
+        ...settings
+      };
+      return {
+        ...prev,
+        systemSettings: merged
+      };
+    });
+
+    addAuditLog(
+      'SETTINGS_UPDATED',
+      'system',
+      `Updated institutional configuration: ${Object.keys(settings).join(', ')}`,
+      'info'
+    );
+    showToast('System settings successfully saved!', 'success');
+  };
+
+  const adminCreateUser = (userData: Partial<User>) => {
+    const newId = (userData.role || 'student') + '-' + Math.random().toString(36).substring(2, 9);
+    const newUser: User = {
+      id: newId,
+      name: userData.name || 'New User',
+      email: userData.email || `user-${Date.now()}@writewise.demo`,
+      role: userData.role || 'student',
+      track: userData.track || 'foundational',
+      classId: userData.classId || 'class-g11',
+      gradeLevel: userData.gradeLevel || (userData.role === 'student' ? 'Grade 11' : userData.role === 'admin' ? 'Division Administration' : 'Faculty'),
+      section: userData.section || (userData.role === 'student' ? 'STEM A' : 'Research Dept'),
+      strand: userData.strand || 'Science, Technology, Engineering, and Mathematics (STEM)',
+      studentIdNumber: userData.studentIdNumber || (userData.role === 'student' ? 'LRN-' + Math.floor(100000000000 + Math.random() * 900000000000) : 'EMP-' + Math.floor(1000 + Math.random() * 9000)),
+      schoolName: userData.schoolName || state.systemSettings?.institutionName || 'Batangas National High School',
+      phone: userData.phone || '+63 917 000 0000',
+      bio: userData.bio || `${userData.role === 'student' ? 'Student researcher' : userData.role === 'admin' ? 'Research Administrator' : 'Faculty instructor'} at WriteWise.`,
+      password: userData.password || 'password123',
+      createdAt: new Date().toISOString()
+    };
+
+    setState(prev => {
+      const existingUsers = prev.users || INITIAL_USERS;
+      let newPapers = prev.papers;
+
+      if (newUser.role === 'student') {
+        const paperId = 'paper-' + Math.random().toString(36).substring(2, 9);
+        const basePaper = prev.papers[0] || INITIAL_PAPERS[0];
+        const newSections = basePaper.sections.map(sec => ({
+          ...sec,
+          status: 'not_started' as const,
+          content: '',
+          wordCount: 0,
+          wordPredictionsAccepted: 0,
+          aiFeedbackRequests: 0,
+          revisionCount: 0,
+          pastedContentDetected: false,
+          lastSavedAt: ''
+        }));
+
+        const newPaper: Paper = {
+          id: paperId,
+          studentId: newId,
+          studentName: newUser.name,
+          studentSection: newUser.section || 'Grade 11 - STEM A',
+          grade: '',
+          title: 'Untitled Practical Research Paper',
+          assignmentId: 'assign-1',
+          progress: 0,
+          sections: newSections,
+          draftHistory: [],
+          track: newUser.track || 'foundational',
+          reflectionCompleted: false
+        };
+
+        newPapers = [...prev.papers, newPaper];
+      }
+
+      return {
+        ...prev,
+        users: [newUser, ...existingUsers],
+        papers: newPapers
+      };
+    });
+
+    addAuditLog(
+      'USER_PROVISIONED',
+      'user_management',
+      `Admin provisioned ${newUser.role} account for ${newUser.name} (${newUser.email})`,
+      'success'
+    );
+    showToast(`Account successfully created for ${newUser.name}!`, 'success');
+  };
+
+  const adminUpdateUser = (userId: string, data: Partial<User>) => {
+    setState(prev => {
+      const existingUsers = prev.users || INITIAL_USERS;
+      const updatedUsers = existingUsers.map(u => {
+        if (u.id === userId) {
+          return { ...u, ...data, id: u.id };
+        }
+        return u;
+      });
+
+      // Sync papers if student
+      const updatedPapers = prev.papers.map(p => {
+        if (p.studentId === userId) {
+          return {
+            ...p,
+            studentName: data.name !== undefined ? data.name : p.studentName,
+            studentSection: data.section !== undefined ? data.section : p.studentSection,
+            track: data.track !== undefined ? data.track : p.track
+          };
+        }
+        return p;
+      });
+
+      const updatedCurrentUser = prev.currentUser?.id === userId
+        ? { ...prev.currentUser, ...data }
+        : prev.currentUser;
+
+      return {
+        ...prev,
+        currentUser: updatedCurrentUser,
+        users: updatedUsers,
+        papers: updatedPapers
+      };
+    });
+
+    addAuditLog(
+      'USER_MODIFIED',
+      'user_management',
+      `Admin updated profile records for user ID: ${userId}`,
+      'info'
+    );
+    showToast('User account successfully updated!', 'success');
+  };
+
+  const adminDeleteUser = (userId: string) => {
+    if (state.currentUser?.id === userId) {
+      showToast('Cannot delete the currently logged in account.', 'warning');
+      return;
+    }
+
+    setState(prev => {
+      const existingUsers = prev.users || INITIAL_USERS;
+      const filteredUsers = existingUsers.filter(u => u.id !== userId);
+      const filteredPapers = prev.papers.filter(p => p.studentId !== userId);
+
+      return {
+        ...prev,
+        users: filteredUsers,
+        papers: filteredPapers
+      };
+    });
+
+    addAuditLog(
+      'USER_DELETED',
+      'user_management',
+      `Admin permanently removed user ID: ${userId}`,
+      'warning'
+    );
+    showToast('User account removed.', 'warning');
+  };
+
+  const adminResetPassword = (userId: string, newPassword = 'password123'): string => {
+    setState(prev => {
+      const existingUsers = prev.users || INITIAL_USERS;
+      const updatedUsers = existingUsers.map(u => {
+        if (u.id === userId) {
+          return { ...u, password: newPassword, passwordLastChanged: new Date().toISOString() };
+        }
+        return u;
+      });
+
+      const updatedCurrentUser = prev.currentUser?.id === userId
+        ? { ...prev.currentUser, password: newPassword, passwordLastChanged: new Date().toISOString() }
+        : prev.currentUser;
+
+      return {
+        ...prev,
+        currentUser: updatedCurrentUser,
+        users: updatedUsers
+      };
+    });
+
+    addAuditLog(
+      'PASSWORD_OVERRIDE',
+      'security',
+      `Admin reset password for user ID: ${userId}`,
+      'warning'
+    );
+    showToast(`Password reset to "${newPassword}"`, 'success');
+    return newPassword;
+  };
+
+  const adminAddSection = (sectionData: Omit<GradeSection, 'id'>) => {
+    const newId = 'sec-' + Math.random().toString(36).substring(2, 9);
+    const newSection: GradeSection = {
+      ...sectionData,
+      id: newId
+    };
+
+    setState(prev => ({
+      ...prev,
+      sections: [...(prev.sections || INITIAL_SECTIONS), newSection]
+    }));
+
+    addAuditLog(
+      'SECTION_CREATED',
+      'curriculum',
+      `Admin created new section "${sectionData.gradeLevel} - ${sectionData.sectionName}" (${sectionData.strand})`,
+      'success'
+    );
+    showToast(`Section "${sectionData.gradeLevel} - ${sectionData.sectionName}" successfully created!`, 'success');
+  };
+
+  const adminUpdateSection = (sectionId: string, data: Partial<GradeSection>) => {
+    setState(prev => {
+      const existingSections = prev.sections || INITIAL_SECTIONS;
+      const updated = existingSections.map(s => s.id === sectionId ? { ...s, ...data } : s);
+      return {
+        ...prev,
+        sections: updated
+      };
+    });
+
+    addAuditLog(
+      'SECTION_UPDATED',
+      'curriculum',
+      `Admin updated section configuration for ID: ${sectionId}`,
+      'info'
+    );
+    showToast('Section details successfully updated!', 'success');
+  };
+
+  const adminDeleteSection = (sectionId: string) => {
+    setState(prev => {
+      const existingSections = prev.sections || INITIAL_SECTIONS;
+      return {
+        ...prev,
+        sections: existingSections.filter(s => s.id !== sectionId)
+      };
+    });
+
+    addAuditLog(
+      'SECTION_DELETED',
+      'curriculum',
+      `Admin removed section record with ID: ${sectionId}`,
+      'warning'
+    );
+    showToast('Section removed.', 'warning');
+  };
+
+  const exportSystemData = (): string => {
+    return JSON.stringify(state, null, 2);
+  };
+
+  const importSystemData = (jsonData: string): boolean => {
+    try {
+      const parsed = JSON.parse(jsonData);
+      if (parsed && Array.isArray(parsed.papers)) {
+        setState(parsed);
+        showToast('System database restored successfully!', 'success');
+        return true;
+      }
+      showToast('Invalid backup file format.', 'warning');
+      return false;
+    } catch {
+      showToast('Failed to parse database backup.', 'warning');
+      return false;
+    }
   };
 
   const updateUserTrack = (studentId: string, track: LearningTrack) => {
@@ -261,7 +739,7 @@ export const WriteWiseProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     });
   };
 
-  const addStudent = (name: string, section: string, track: LearningTrack) => {
+  const addStudent = (name: string, section: string, track: LearningTrack, gradeLevel = 'Grade 11', strand?: string) => {
     const studentId = 'student-' + Math.random().toString(36).substring(2, 9);
     const paperId = 'paper-' + Math.random().toString(36).substring(2, 9);
 
@@ -278,11 +756,13 @@ export const WriteWiseProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       lastSavedAt: ''
     }));
 
+    const cleanSection = section.includes(gradeLevel) ? section : `${gradeLevel} - ${section}`;
+
     const newPaper: Paper = {
       id: paperId,
       studentId,
       studentName: name,
-      studentSection: section || 'Grade 11 - STEM A',
+      studentSection: cleanSection,
       grade: '',
       title: 'Untitled Practical Research Paper',
       assignmentId: 'assign-1',
@@ -293,35 +773,157 @@ export const WriteWiseProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       reflectionCompleted: false
     };
 
+    const newUser: User = {
+      id: studentId,
+      name,
+      email: `${name.toLowerCase().replace(/[^a-z0-9]/g, '.')}@deped.demo`,
+      role: 'student',
+      track,
+      classId: 'class-g11',
+      gradeLevel,
+      section,
+      strand: strand || 'Science, Technology, Engineering, and Mathematics (STEM)',
+      studentIdNumber: 'LRN-' + Math.floor(100000000000 + Math.random() * 900000000000),
+      schoolName: state.systemSettings?.institutionName || 'Batangas National High School',
+      password: 'password123',
+      createdAt: new Date().toISOString()
+    };
+
     setState(prev => ({
       ...prev,
+      users: [newUser, ...(prev.users || INITIAL_USERS)],
       papers: [...prev.papers, newPaper]
     }));
-    showToast(`Student ${name} successfully added to ${section || 'Grade 11 - STEM A'}!`, 'success');
+
+    addAuditLog(
+      'STUDENT_ENROLLED',
+      'user_management',
+      `Student ${name} enrolled in ${cleanSection} (${track.toUpperCase()} track)`,
+      'success'
+    );
+    showToast(`Student ${name} successfully enrolled in ${cleanSection}!`, 'success');
   };
 
   const updateStudentName = (studentId: string, name: string) => {
     setState(prev => {
-      const updated = prev.papers.map(p => {
+      const updatedPapers = prev.papers.map(p => {
         if (p.studentId === studentId) {
           return { ...p, studentName: name };
         }
         return p;
       });
-      return { ...prev, papers: updated };
+
+      const updatedUsers = (prev.users || INITIAL_USERS).map(u => {
+        if (u.id === studentId) {
+          return { ...u, name };
+        }
+        return u;
+      });
+
+      return { ...prev, papers: updatedPapers, users: updatedUsers };
     });
   };
 
-  const updateStudentSection = (studentId: string, section: string) => {
+  const assignStudentSection = (studentId: string, section: string, gradeLevel?: string, strand?: string) => {
+    let studentName = 'Student';
+
     setState(prev => {
-      const updated = prev.papers.map(p => {
+      // Find current user data
+      const existingUser = (prev.users || INITIAL_USERS).find(u => u.id === studentId);
+      if (existingUser?.name) {
+        studentName = existingUser.name;
+      }
+      const effectiveGrade = gradeLevel || existingUser?.gradeLevel || 'Grade 11';
+      const formattedLabel = section.includes(effectiveGrade) ? section : `${effectiveGrade} - ${section}`;
+
+      let hasPaper = false;
+      let updatedPapers = prev.papers.map(p => {
         if (p.studentId === studentId) {
-          return { ...p, studentSection: section };
+          hasPaper = true;
+          return { 
+            ...p, 
+            studentSection: formattedLabel,
+            studentName: existingUser?.name || p.studentName
+          };
         }
         return p;
       });
-      return { ...prev, papers: updated };
+
+      if (!hasPaper && existingUser && existingUser.role === 'student') {
+        const basePaper = prev.papers[0] || INITIAL_PAPERS[0];
+        const newSections = (basePaper.sections || []).map(sec => ({
+          ...sec,
+          status: 'not_started' as const,
+          content: '',
+          wordCount: 0,
+          wordPredictionsAccepted: 0,
+          aiFeedbackRequests: 0,
+          revisionCount: 0,
+          pastedContentDetected: false,
+          lastSavedAt: ''
+        }));
+
+        const newPaper: Paper = {
+          id: 'paper-' + Math.random().toString(36).substring(2, 9),
+          studentId: studentId,
+          studentName: existingUser.name,
+          studentSection: formattedLabel,
+          grade: '',
+          title: 'Untitled Practical Research Paper',
+          assignmentId: 'assign-1',
+          progress: 0,
+          sections: newSections,
+          draftHistory: [],
+          track: existingUser.track || 'foundational',
+          reflectionCompleted: false
+        };
+        updatedPapers = [...updatedPapers, newPaper];
+      }
+
+      const updatedUsers = (prev.users || INITIAL_USERS).map(u => {
+        if (u.id === studentId) {
+          return {
+            ...u,
+            section,
+            gradeLevel: effectiveGrade,
+            strand: strand || u.strand
+          };
+        }
+        return u;
+      });
+
+      const updatedCurrentUser = prev.currentUser?.id === studentId
+        ? {
+            ...prev.currentUser,
+            section,
+            gradeLevel: effectiveGrade,
+            strand: strand || prev.currentUser.strand
+          }
+        : prev.currentUser;
+
+      return {
+        ...prev,
+        currentUser: updatedCurrentUser,
+        papers: updatedPapers,
+        users: updatedUsers
+      };
     });
+
+    const targetPaper = state.papers.find(p => p.studentId === studentId);
+    const finalName = targetPaper?.studentName || studentName;
+    const effectiveGrade = gradeLevel || 'Grade 11';
+
+    addAuditLog(
+      'SECTION_ASSIGNED',
+      'curriculum',
+      `Assigned student ${finalName} to ${effectiveGrade} - ${section}`,
+      'info'
+    );
+    showToast(`${finalName} assigned to ${effectiveGrade} - ${section}!`, 'success');
+  };
+
+  const updateStudentSection = (studentId: string, section: string, gradeLevel?: string, strand?: string) => {
+    assignStudentSection(studentId, section, gradeLevel, strand);
   };
 
   const assignGrade = (studentId: string, grade: number | string) => {
@@ -342,7 +944,8 @@ export const WriteWiseProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const studentPaper = prev.papers.find(p => p.studentId === studentId);
       const studentName = studentPaper?.studentName || 'Student';
       const updatedPapers = prev.papers.filter(p => p.studentId !== studentId);
-      return { ...prev, papers: updatedPapers };
+      const updatedUsers = (prev.users || INITIAL_USERS).filter(u => u.id !== studentId);
+      return { ...prev, papers: updatedPapers, users: updatedUsers };
     });
     showToast('Student record deleted successfully.', 'warning');
   };
@@ -937,11 +1540,26 @@ export const WriteWiseProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         addStudent,
         updateStudentName,
         updateStudentSection,
+        assignStudentSection,
         assignGrade,
         deleteStudent,
         addComment,
         deleteComment,
         updateMatrixCell,
+        updateUserProfile,
+        changePassword,
+        updateSystemSettings,
+        adminCreateUser,
+        adminUpdateUser,
+        adminDeleteUser,
+        adminResetPassword,
+        adminAddSection,
+        adminUpdateSection,
+        adminDeleteSection,
+        addAuditLog,
+        clearAuditLogs,
+        exportSystemData,
+        importSystemData,
         resetData
       }}
     >

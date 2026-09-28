@@ -3,9 +3,43 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export type UserRole = 'student' | 'teacher' | 'expert';
+export type UserRole = 'student' | 'teacher' | 'expert' | 'admin';
 export type LearningTrack = 'foundational' | 'advanced';
 export type AIAssistancePolicy = 'minimal' | 'guided' | 'supported' | 'declared_ai_use';
+
+export interface SystemSettings {
+  institutionName: string;
+  academicYear: string;
+  aiPolicy: AIAssistancePolicy;
+  autocompleteEnabled: boolean;
+  strictSimilarityCheck: boolean;
+  allowStudentTrackChange: boolean;
+  maxDailyAIRequestsPerStudent: number;
+  maintenanceNotice?: string;
+  broadcastAlert?: string;
+}
+
+export interface AuditLogEntry {
+  id: string;
+  timestamp: string;
+  actor: string;
+  actorRole: UserRole;
+  action: string;
+  category: 'auth' | 'submission' | 'security' | 'curriculum' | 'user_management' | 'system' | 'grading';
+  details: string;
+  status: 'success' | 'warning' | 'info';
+}
+
+export interface GradeSection {
+  id: string;
+  gradeLevel: string;
+  sectionName: string;
+  strand: string;
+  room?: string;
+  adviserName?: string;
+  schedule?: string;
+  description?: string;
+}
 
 export interface User {
   id: string;
@@ -14,6 +48,17 @@ export interface User {
   role: UserRole;
   track?: LearningTrack;
   classId?: string;
+  gradeLevel?: string;
+  section?: string;
+  strand?: string;
+  studentIdNumber?: string;
+  schoolName?: string;
+  phone?: string;
+  bio?: string;
+  avatarUrl?: string;
+  password?: string;
+  passwordLastChanged?: string;
+  createdAt?: string;
 }
 
 export interface SurveyResponse {
@@ -165,10 +210,14 @@ export interface Assignment {
 
 export interface AppState {
   currentUser: User | null;
+  users?: User[];
   papers: Paper[];
   sources: Source[];
   assignments: Assignment[];
   competencies: CompetencyMapping[];
   validations: ExpertValidation[];
   rubric: Rubric;
+  systemSettings?: SystemSettings;
+  auditLogs?: AuditLogEntry[];
+  sections?: GradeSection[];
 }

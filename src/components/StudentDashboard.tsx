@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { useWriteWise } from '../WriteWiseContext';
-import { BookOpen, CheckCircle, Clock, AlertTriangle, ChevronRight, HelpCircle, FileText, Compass, Sparkles, BookMarked, Layers, Award } from 'lucide-react';
+import { BookOpen, CheckCircle, Clock, AlertTriangle, ChevronRight, HelpCircle, FileText, Compass, Sparkles, BookMarked, Layers, Award, Bell } from 'lucide-react';
 
 const getGradeInterpretation = (gradeStr: string | number | undefined) => {
   if (!gradeStr) return null;
@@ -50,6 +50,21 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onNavigate }
 
   return (
     <div className="space-y-6">
+      {/* Institutional Announcement Broadcast */}
+      {state.systemSettings?.broadcastAlert && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-3.5 flex items-center justify-between gap-3 text-xs text-blue-900 shadow-2xs animate-fade-in">
+          <div className="flex items-center gap-2.5">
+            <span className="p-1 bg-[#17365D] text-white rounded-md shrink-0">
+              <Bell className="h-3.5 w-3.5" />
+            </span>
+            <span>
+              <strong className="font-bold text-[#17365D]">Campus Announcement: </strong>
+              {state.systemSettings.broadcastAlert}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* 1. Welcome Panel */}
       <div className="bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="space-y-1">

@@ -3,24 +3,250 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Assignment, Paper, Source, CompetencyMapping, ExpertValidation, Rubric } from './types';
+import { Assignment, Paper, Source, CompetencyMapping, ExpertValidation, Rubric, User, SystemSettings, AuditLogEntry, GradeSection } from './types';
 
-export const DEMO_STUDENT = {
+export const DEMO_STUDENT: User = {
   id: 'student-1',
   name: 'Alex Marasigan',
   email: 'student@writewise.demo',
   role: 'student' as const,
   track: 'foundational' as const,
-  classId: 'class-g11'
+  classId: 'class-g11',
+  gradeLevel: 'Grade 11',
+  section: 'STEM A',
+  strand: 'Science, Technology, Engineering, and Mathematics (STEM)',
+  studentIdNumber: 'LRN-109482910394',
+  schoolName: 'Batangas National High School - Senior High Department',
+  phone: '+63 917 555 4321',
+  bio: 'Senior High School student specializing in STEM. Currently conducting practical research on digital distraction and student attention span during blended learning.',
+  password: 'password123',
+  passwordLastChanged: '2026-08-15T08:30:00Z',
+  createdAt: '2026-06-01T08:00:00Z'
 };
 
-export const DEMO_TEACHER = {
+export const DEMO_TEACHER: User = {
   id: 'teacher-1',
   name: 'Mrs. Maria Santos',
   email: 'teacher@writewise.demo',
   role: 'teacher' as const,
-  classId: 'class-g11'
+  classId: 'class-g11',
+  gradeLevel: 'Grade 11 & 12',
+  section: 'Practical Research 1 & 2 Lead Instructor',
+  strand: 'Senior High School Research Department',
+  studentIdNumber: 'EMP-2018-0492',
+  schoolName: 'Batangas National High School - Senior High Department',
+  phone: '+63 918 555 9876',
+  bio: 'DepEd Senior High School Practical Research Master Teacher and Research Coordinator with 12 years of mentoring experience.',
+  password: 'password123',
+  passwordLastChanged: '2026-07-20T09:15:00Z',
+  createdAt: '2026-05-15T08:00:00Z'
 };
+
+export const DEMO_ADMIN: User = {
+  id: 'admin-1',
+  name: 'Dr. Roberto Mendoza',
+  email: 'admin@writewise.demo',
+  role: 'admin' as const,
+  classId: 'admin-division',
+  gradeLevel: 'Division Administration',
+  section: 'Senior High Research Council',
+  strand: 'Institutional Curriculum & Research Directorate',
+  studentIdNumber: 'ADM-2015-001',
+  schoolName: 'Batangas Division - Senior High School Research Council',
+  phone: '+63 919 555 7788',
+  bio: 'Senior Education Program Specialist & Research Council Administrator supervising DepEd Practical Research 1 & 2 implementation.',
+  password: 'password123',
+  passwordLastChanged: '2026-08-01T08:00:00Z',
+  createdAt: '2026-05-01T08:00:00Z'
+};
+
+export const INITIAL_USERS: User[] = [
+  DEMO_ADMIN,
+  DEMO_TEACHER,
+  DEMO_STUDENT,
+  {
+    id: 'student-2',
+    name: 'Bea Villanueva',
+    email: 'bea.villanueva@deped.demo',
+    role: 'student',
+    track: 'advanced',
+    classId: 'class-g11',
+    gradeLevel: 'Grade 11',
+    section: 'STEM A',
+    strand: 'Science, Technology, Engineering, and Mathematics (STEM)',
+    studentIdNumber: 'LRN-109482910395',
+    schoolName: 'Batangas National High School - Senior High Department',
+    phone: '+63 917 555 1204',
+    bio: 'Conducting phenomenological inquiry into micro-entrepreneurship among senior high students.',
+    password: 'password123',
+    createdAt: '2026-06-02T08:00:00Z'
+  },
+  {
+    id: 'student-3',
+    name: 'Carlos D. Ramos',
+    email: 'carlos.ramos@deped.demo',
+    role: 'student',
+    track: 'foundational',
+    classId: 'class-g11',
+    gradeLevel: 'Grade 11',
+    section: 'HUMSS B',
+    strand: 'Humanities and Social Sciences (HUMSS)',
+    studentIdNumber: 'LRN-109482910396',
+    schoolName: 'Batangas National High School - Senior High Department',
+    phone: '+63 917 555 8821',
+    bio: 'Investigating indigenous historical preservation in local barangay archives.',
+    password: 'password123',
+    createdAt: '2026-06-03T08:00:00Z'
+  }
+];
+
+export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
+  institutionName: 'Batangas National High School - Senior High Department',
+  academicYear: 'S.Y. 2026-2027',
+  aiPolicy: 'guided',
+  autocompleteEnabled: true,
+  strictSimilarityCheck: true,
+  allowStudentTrackChange: false,
+  maxDailyAIRequestsPerStudent: 15,
+  maintenanceNotice: '',
+  broadcastAlert: 'Midterm Research Synthesis Checkpoint: Chapters 1 to 3 submissions due this Friday.'
+};
+
+export const INITIAL_AUDIT_LOGS: AuditLogEntry[] = [
+  {
+    id: 'log-1',
+    timestamp: '2026-09-28T01:05:00Z',
+    actor: 'Dr. Roberto Mendoza',
+    actorRole: 'admin',
+    action: 'POLICY_UPDATE',
+    category: 'curriculum',
+    details: 'Enforced AI Assistance Policy to "Guided Scaffolding" across Grade 11 STEM and HUMSS sections.',
+    status: 'info'
+  },
+  {
+    id: 'log-2',
+    timestamp: '2026-09-27T14:32:00Z',
+    actor: 'Mrs. Maria Santos',
+    actorRole: 'teacher',
+    action: 'GRADE_SUBMITTED',
+    category: 'grading',
+    details: 'Graded Chapter 2 Literature Review for Alex Marasigan (Score: 92/100, Rating: Proficient).',
+    status: 'success'
+  },
+  {
+    id: 'log-3',
+    timestamp: '2026-09-27T10:15:00Z',
+    actor: 'System Integrity Scanner',
+    actorRole: 'admin',
+    action: 'SIMILARITY_CHECK',
+    category: 'security',
+    details: 'Processed originality scan on Paper #paper-1. Detected verbatim quote from Santos (2025); flagged for student revision.',
+    status: 'warning'
+  },
+  {
+    id: 'log-4',
+    timestamp: '2026-09-26T09:00:00Z',
+    actor: 'Alex Marasigan',
+    actorRole: 'student',
+    action: 'USER_LOGIN',
+    category: 'auth',
+    details: 'Student authenticated via session portal from IP 192.168.1.42.',
+    status: 'info'
+  },
+  {
+    id: 'log-5',
+    timestamp: '2026-09-25T16:45:00Z',
+    actor: 'Dr. Roberto Mendoza',
+    actorRole: 'admin',
+    action: 'USER_CREATED',
+    category: 'user_management',
+    details: 'Provisioned faculty research account for Mr. John D. Ramos (HUMSS Practical Research 1).',
+    status: 'success'
+  }
+];
+
+export const INITIAL_SECTIONS: GradeSection[] = [
+  {
+    id: 'sec-g11-stem-a',
+    gradeLevel: 'Grade 11',
+    sectionName: 'STEM A',
+    strand: 'Science, Technology, Engineering, and Mathematics (STEM)',
+    room: 'Room 304 - Science Wing',
+    adviserName: 'Mrs. Maria Santos',
+    schedule: 'MWF 8:00 AM - 10:00 AM',
+    description: 'Senior High Practical Research 1 & 2 Cohort'
+  },
+  {
+    id: 'sec-g11-stem-b',
+    gradeLevel: 'Grade 11',
+    sectionName: 'STEM B',
+    strand: 'Science, Technology, Engineering, and Mathematics (STEM)',
+    room: 'Room 305 - Science Wing',
+    adviserName: 'Mr. Eric Bautista',
+    schedule: 'TTh 1:00 PM - 3:30 PM',
+    description: 'Practical Research 1 Qualitative Focus'
+  },
+  {
+    id: 'sec-g11-humss-a',
+    gradeLevel: 'Grade 11',
+    sectionName: 'HUMSS A',
+    strand: 'Humanities and Social Sciences (HUMSS)',
+    room: 'Room 201 - Social Sciences Wing',
+    adviserName: 'Ms. Clara Reyes',
+    schedule: 'MWF 10:00 AM - 12:00 PM',
+    description: 'Phenomenological and Case Study Inquiries'
+  },
+  {
+    id: 'sec-g11-humss-b',
+    gradeLevel: 'Grade 11',
+    sectionName: 'HUMSS B',
+    strand: 'Humanities and Social Sciences (HUMSS)',
+    room: 'Room 202 - Social Sciences Wing',
+    adviserName: 'Mr. John D. Ramos',
+    schedule: 'MWF 1:00 PM - 3:00 PM',
+    description: 'Historical and Sociolinguistic Research'
+  },
+  {
+    id: 'sec-g11-abm-a',
+    gradeLevel: 'Grade 11',
+    sectionName: 'ABM A',
+    strand: 'Accountancy, Business, and Management (ABM)',
+    room: 'Room 105 - Business Wing',
+    adviserName: 'Mrs. Evelyn Garcia',
+    schedule: 'TTh 8:00 AM - 10:30 AM',
+    description: 'Market Feasibility and Financial Research'
+  },
+  {
+    id: 'sec-g11-tvl-ict',
+    gradeLevel: 'Grade 11',
+    sectionName: 'TVL - ICT',
+    strand: 'Technical-Vocational-Livelihood (TVL) - ICT',
+    room: 'Computer Lab 2',
+    adviserName: 'Engr. Michael Tan',
+    schedule: 'MWF 3:00 PM - 5:00 PM',
+    description: 'Applied Systems Development and Usability Research'
+  },
+  {
+    id: 'sec-g12-stem-a',
+    gradeLevel: 'Grade 12',
+    sectionName: 'STEM A',
+    strand: 'Science, Technology, Engineering, and Mathematics (STEM)',
+    room: 'Room 401 - Senior Hall',
+    adviserName: 'Mrs. Maria Santos',
+    schedule: 'TTh 10:00 AM - 12:30 PM',
+    description: 'Practical Research 2 Quantitative & Inquiries, Investigations, and Immersions (3Is)'
+  },
+  {
+    id: 'sec-g12-humss-a',
+    gradeLevel: 'Grade 12',
+    sectionName: 'HUMSS A',
+    strand: 'Humanities and Social Sciences (HUMSS)',
+    room: 'Room 402 - Senior Hall',
+    adviserName: 'Ms. Clara Reyes',
+    schedule: 'MWF 8:00 AM - 10:00 AM',
+    description: 'Advanced Culminating Research & Action Research'
+  }
+];
 
 export const DEFAULT_ASSIGNMENTS: Assignment[] = [
   {

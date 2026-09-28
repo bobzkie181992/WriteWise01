@@ -16,8 +16,34 @@ import { AIUseProfile } from './components/AIUseProfile';
 import { Reflection } from './components/Reflection';
 import { PostSurvey } from './components/PostSurvey';
 import { TeacherDashboard } from './components/TeacherDashboard';
+import { AdminDashboard } from './components/AdminDashboard';
 import { AutocompletePlayground } from './components/AutocompletePlayground';
-import { BookOpen, LogOut, LayoutDashboard, PenTool, BookMarked, Layers, Compass, ShieldCheck, FileSignature, Award, Settings, User, Menu, X, CheckCircle, AlertTriangle, Users, FileText, Shield, Sparkles } from 'lucide-react';
+import { UserProfile } from './components/UserProfile';
+import { 
+  BookOpen, 
+  LogOut, 
+  LayoutDashboard, 
+  PenTool, 
+  BookMarked, 
+  Layers, 
+  Compass, 
+  ShieldCheck, 
+  FileSignature, 
+  Award, 
+  Settings, 
+  User, 
+  Menu, 
+  X, 
+  CheckCircle, 
+  AlertTriangle, 
+  Users, 
+  FileText, 
+  Shield, 
+  Sparkles,
+  Sliders,
+  History,
+  Database
+} from 'lucide-react';
 
 function WriteWiseAppContent() {
   const { state, logout, toasts, removeToast } = useWriteWise();
@@ -28,9 +54,23 @@ function WriteWiseAppContent() {
 
   React.useEffect(() => {
     if (user && user.role === 'teacher') {
-      const teacherTabs = ['roster', 'assignments', 'validations', 'competencies', 'analytics', 'autocomplete'];
+      const teacherTabs = ['roster', 'assignments', 'validations', 'competencies', 'analytics', 'autocomplete', 'profile'];
       if (!teacherTabs.includes(activeTab)) {
         setActiveTab('roster');
+      }
+    } else if (user && user.role === 'admin') {
+      const adminTabs = [
+        'admin_users', 
+        'admin_sections', 
+        'admin_analytics', 
+        'admin_policy', 
+        'admin_audit', 
+        'admin_database', 
+        'autocomplete', 
+        'profile'
+      ];
+      if (!adminTabs.includes(activeTab)) {
+        setActiveTab('admin_users');
       }
     }
   }, [user, activeTab]);
@@ -67,9 +107,9 @@ function WriteWiseAppContent() {
   };
 
   return (
-    <div className={`min-h-screen bg-[#F7F9FC] flex flex-col font-sans text-slate-800 ${user.role === 'student' ? 'theme-student' : 'theme-teacher'}`}>
+    <div className={`h-screen max-h-screen overflow-hidden flex flex-col font-sans text-slate-800 ${user.role === 'student' ? 'theme-student' : 'theme-teacher'}`}>
       {/* 3-Zone Global Header */}
-      <header className="flex items-center justify-between px-4 sm:px-6 py-4 bg-white border-b border-slate-200 sticky top-0 z-40">
+      <header className="shrink-0 flex items-center justify-between px-4 sm:px-6 py-3.5 bg-white border-b border-slate-200 z-40">
         <div className="flex items-center gap-2">
           {/* Hamburger button for smaller screens */}
           <button
@@ -88,12 +128,29 @@ function WriteWiseAppContent() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-4">
-          <div className="text-right hidden sm:block">
-            <span className="text-xs font-bold text-slate-800 block">{user.name}</span>
-            <span className="text-[10px] text-slate-400 font-mono">
-              {user.role === 'student' ? `Scaffolding: ${paper.track.toUpperCase()}` : user.email}
-            </span>
-          </div>
+          <button
+            onClick={() => handleNavigate('profile')}
+            className={`flex items-center gap-2.5 p-1.5 sm:px-3 sm:py-1.5 rounded-xl border transition-all text-left ${
+              activeTab === 'profile'
+                ? 'bg-[#17365D] text-white border-[#17365D] shadow-sm'
+                : 'bg-slate-50 hover:bg-slate-100 border-slate-200/80 text-slate-700'
+            }`}
+            title="View & Edit Information Profile"
+          >
+            <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
+              activeTab === 'profile' ? 'bg-white text-[#17365D]' : 'bg-[#17365D] text-white'
+            }`}>
+              {user.name.slice(0, 1).toUpperCase()}
+            </div>
+            <div className="text-left hidden sm:block">
+              <span className={`text-xs font-bold block leading-tight ${activeTab === 'profile' ? 'text-white' : 'text-slate-800'}`}>
+                {user.name}
+              </span>
+              <span className={`text-[10px] font-mono leading-tight block ${activeTab === 'profile' ? 'text-slate-200' : 'text-slate-400'}`}>
+                Profile & Settings
+              </span>
+            </div>
+          </button>
           
           <button
             onClick={() => logout()}
@@ -114,7 +171,7 @@ function WriteWiseAppContent() {
       </header>
 
       {/* Main Body Grid Layout */}
-      <div className="flex-1 max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-hidden relative">
+      <div className="flex-1 min-h-0 max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-hidden relative">
         
         {/* Backdrop for mobile drawer */}
         {isMobileMenuOpen && (
@@ -126,13 +183,15 @@ function WriteWiseAppContent() {
 
         {/* Navigation Sidebar Zone (3 cols) */}
         <aside className={`
-          fixed inset-y-0 left-0 w-72 bg-white border-r border-slate-200 p-4 space-y-6 z-40 transition-transform duration-300 transform 
-          lg:static lg:translate-x-0 lg:w-auto lg:col-span-3 lg:z-auto lg:block
+          fixed inset-y-0 left-0 w-72 bg-white border-r border-slate-200 p-4 z-40 transition-transform duration-300 transform 
+          lg:static lg:translate-x-0 lg:w-auto lg:col-span-3 lg:z-auto lg:flex lg:flex-col lg:justify-between
+          h-full max-h-full overflow-y-auto custom-scrollbar
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
         `}>
-          <div className="space-y-1">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-3">Workspace Portal</span>
+          <div className="space-y-6">
             <div className="space-y-1">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-3">Workspace Portal</span>
+              <div className="space-y-1">
               {user.role === 'student' ? (
                 <>
                   <button
@@ -189,6 +248,40 @@ function WriteWiseAppContent() {
                   >
                     <Sparkles className="h-4 w-4 shrink-0 text-amber-400" /> Autocomplete Suite
                   </button>
+                  <button
+                    onClick={() => handleNavigate('profile')}
+                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${activeTab === 'profile' ? 'bg-[#17365D] text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50/50'}`}
+                  >
+                    <User className="h-4 w-4 shrink-0 text-[#1F8A8A]" /> Information Profile
+                  </button>
+                </>
+              ) : user.role === 'admin' ? (
+                <>
+                  {[
+                    { id: 'admin_users', name: 'User Directory (Students & Teachers)', icon: Users },
+                    { id: 'admin_sections', name: 'Section & Grade Level', icon: Layers },
+                    { id: 'admin_analytics', name: 'Institutional Analytics', icon: Compass },
+                    { id: 'admin_policy', name: 'Curriculum & AI Policies', icon: Sliders },
+                    { id: 'admin_audit', name: 'System Audit Logs', icon: History },
+                    { id: 'admin_database', name: 'Database Backup', icon: Database },
+                    { id: 'autocomplete', name: 'Intelligent Autocomplete', icon: Sparkles },
+                    { id: 'profile', name: 'Information Profile', icon: User }
+                  ].map((tab) => {
+                    const Icon = tab.icon;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => handleNavigate(tab.id)}
+                        className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+                          activeTab === tab.id
+                            ? 'bg-[#17365D] text-white shadow-sm'
+                            : 'text-slate-600 hover:bg-slate-50/50'
+                        }`}
+                      >
+                        <Icon className="h-4 w-4 shrink-0" /> {tab.name}
+                      </button>
+                    );
+                  })}
                 </>
               ) : (
                 <>
@@ -198,7 +291,8 @@ function WriteWiseAppContent() {
                     { id: 'validations', name: 'Expert Validation Register', icon: Shield },
                     { id: 'competencies', name: 'DepEd Competency Map', icon: Award },
                     { id: 'analytics', name: 'Research & Writing Analytics', icon: Compass },
-                    { id: 'autocomplete', name: 'Intelligent Autocomplete', icon: Sparkles }
+                    { id: 'autocomplete', name: 'Intelligent Autocomplete', icon: Sparkles },
+                    { id: 'profile', name: 'Information Profile', icon: User }
                   ].map((tab) => {
                     const Icon = tab.icon;
                     return (
@@ -229,6 +323,7 @@ function WriteWiseAppContent() {
                 <LogOut className="h-4 w-4 shrink-0" /> Logout
               </button>
             </div>
+            </div>
           </div>
 
           {/* Quick Info Box (No Slop, Unboxed) */}
@@ -239,7 +334,7 @@ function WriteWiseAppContent() {
         </aside>
 
         {/* Primary Workspace Stage (9 cols) */}
-        <main className="lg:col-span-9 p-6 lg:p-8 overflow-y-auto max-h-[calc(100vh-73px)]">
+        <main className="lg:col-span-9 p-6 lg:p-8 overflow-y-auto h-full max-h-full min-h-0 custom-scrollbar">
           
           {user.role === 'student' ? (
             <>
@@ -252,6 +347,7 @@ function WriteWiseAppContent() {
               {activeTab === 'aiprofile' && <AIUseProfile />}
               {activeTab === 'reflection' && <Reflection />}
               {activeTab === 'postsurvey' && <PostSurvey />}
+              {activeTab === 'profile' && <UserProfile onNavigateToWorkspace={() => handleNavigate('workspace')} />}
               {activeTab === 'settings' && (
                 <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm text-xs font-sans space-y-4">
                   <h3 className="font-bold text-sm text-slate-800 font-serif border-b border-slate-100 pb-2">Support Track Settings</h3>
@@ -261,8 +357,18 @@ function WriteWiseAppContent() {
                 </div>
               )}
             </>
+          ) : user.role === 'admin' ? (
+            activeTab === 'profile' ? (
+              <UserProfile />
+            ) : activeTab === 'autocomplete' ? (
+              <AutocompletePlayground />
+            ) : (
+              <AdminDashboard activeTab={activeTab} onNavigate={handleNavigate} />
+            )
           ) : (
-            activeTab === 'autocomplete' ? (
+            activeTab === 'profile' ? (
+              <UserProfile />
+            ) : activeTab === 'autocomplete' ? (
               <AutocompletePlayground />
             ) : (
               <TeacherDashboard activeTab={activeTab} />

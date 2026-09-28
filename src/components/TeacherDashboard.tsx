@@ -3,9 +3,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useWriteWise } from '../WriteWiseContext';
-import { Users, FileText, CheckCircle, Shield, Award, Edit, Trash2, ArrowUpRight, Compass, ShieldAlert, Plus, HelpCircle } from 'lucide-react';
+import { 
+  Users, 
+  FileText, 
+  CheckCircle, 
+  Shield, 
+  Award, 
+  Edit, 
+  Trash2, 
+  ArrowUpRight, 
+  Compass, 
+  ShieldAlert, 
+  Plus, 
+  HelpCircle,
+  Layers,
+  Check,
+  X,
+  BookmarkCheck,
+  UserCheck
+} from 'lucide-react';
 
 const getGradeInterpretation = (gradeStr: string | number | undefined) => {
   if (!gradeStr) return null;
@@ -31,7 +49,32 @@ interface TeacherDashboardProps {
 }
 
 export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ activeTab }) => {
-  const { state, updateUserTrack, addAssignment, addValidation, verifySource, showToast, addStudent, updateStudentName, updateStudentSection, assignGrade, deleteStudent, addComment, deleteComment } = useWriteWise();
+  const { 
+    state, 
+    updateUserTrack, 
+    addAssignment, 
+    addValidation, 
+    verifySource, 
+    showToast, 
+    addStudent, 
+    updateStudentName, 
+    updateStudentSection, 
+    assignStudentSection,
+    assignGrade, 
+    deleteStudent, 
+    addComment, 
+    deleteComment 
+  } = useWriteWise();
+
+  const sectionsList = state.sections || [];
+
+  const availableGradeLevels = useMemo(() => {
+    const set = new Set(['Grade 11', 'Grade 12']);
+    sectionsList.forEach(s => {
+      if (s.gradeLevel) set.add(s.gradeLevel);
+    });
+    return Array.from(set);
+  }, [sectionsList]);
 
   // Roster Filter Track override helper
   const handleTrackChange = (studentId: string, track: 'foundational' | 'advanced') => {
@@ -42,13 +85,29 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ activeTab })
   // State for Add Student inline form
   const [showAddStudentForm, setShowAddStudentForm] = useState(false);
   const [newStudentName, setNewStudentName] = useState('');
-  const [newStudentSection, setNewStudentSection] = useState('Grade 11 - STEM A');
+  const [newStudentGradeLevel, setNewStudentGradeLevel] = useState('Grade 11');
+  const [newStudentSectionName, setNewStudentSectionName] = useState('STEM A');
+  const [newStudentCustomSection, setNewStudentCustomSection] = useState('');
   const [newStudentTrack, setNewStudentTrack] = useState<'foundational' | 'advanced'>('foundational');
+
+  // State for Assign Section Modal
+  const [assigningStudent, setAssigningStudent] = useState<{
+    id: string;
+    name: string;
+    currentSection: string;
+    currentGrade: string;
+    track: 'foundational' | 'advanced';
+  } | null>(null);
+  const [assignGradeLevel, setAssignGradeLevel] = useState('Grade 11');
+  const [assignSectionName, setAssignSectionName] = useState('STEM A');
+  const [assignCustomSection, setAssignCustomSection] = useState('');
 
   // State for Edit Student Modal
   const [editStudentId, setEditStudentId] = useState<string | null>(null);
   const [editStudentName, setEditStudentName] = useState('');
-  const [editStudentSection, setEditStudentSection] = useState('Grade 11 - STEM A');
+  const [editStudentGradeLevel, setEditStudentGradeLevel] = useState('Grade 11');
+  const [editStudentSection, setEditStudentSection] = useState('STEM A');
+  const [editStudentCustomSection, setEditStudentCustomSection] = useState('');
   const [editStudentTrack, setEditStudentTrack] = useState<'foundational' | 'advanced'>('foundational');
   const [editStudentScore, setEditStudentScore] = useState('');
 
@@ -59,13 +118,30 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ activeTab })
 
   const handleCreateStudentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newStudentName.trim() || !newStudentSection.trim()) {
-      showToast('Please enter both student name and section.', 'warning');
+    if (!newStudentName.trim()) {
+      showToast('Please enter student name.', 'warning');
       return;
     }
-    addStudent(newStudentName.trim(), newStudentSection.trim(), newStudentTrack);
+    const finalSection = newStudentSectionName === 'custom' 
+      ? (newStudentCustomSection.trim() || 'STEM A') 
+      : newStudentSectionName;
+    const matchingSec = sectionsList.find(s => s.gradeLevel === newStudentGradeLevel && s.sectionName === finalSection);
+
+    addStudent(newStudentName.trim(), finalSection, newStudentTrack, newStudentGradeLevel, matchingSec?.strand);
     setNewStudentName('');
     setShowAddStudentForm(false);
+  };
+
+  const handleConfirmAssignment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!assigningStudent) return;
+    const finalSection = assignSectionName === 'custom' 
+      ? (assignCustomSection.trim() || 'STEM A') 
+      : assignSectionName;
+    const matchingSec = sectionsList.find(s => s.gradeLevel === assignGradeLevel && s.sectionName === finalSection);
+
+    assignStudentSection(assigningStudent.id, finalSection, assignGradeLevel, matchingSec?.strand);
+    setAssigningStudent(null);
   };
 
   // State for Add Validation form
@@ -231,29 +307,60 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ activeTab })
           </div>
 
           {showAddStudentForm && (
-            <form onSubmit={handleCreateStudentSubmit} className="p-5 bg-[#17365D]/5 border-b border-slate-200 grid grid-cols-1 md:grid-cols-4 gap-4 text-xs font-sans items-end animate-fade-in">
+            <form onSubmit={handleCreateStudentSubmit} className="p-5 bg-[#17365D]/5 border-b border-slate-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 text-xs font-sans items-end animate-fade-in">
               <div className="space-y-1">
-                <label className="font-bold text-slate-600 uppercase">Student Name</label>
+                <label className="font-bold text-slate-600 uppercase">Student Full Name *</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Maria Clara"
+                  placeholder="e.g. Maria Clara Santos"
                   value={newStudentName}
                   onChange={(e) => setNewStudentName(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 bg-white rounded-lg focus:outline-none focus:border-[#1F8A8A]"
                 />
               </div>
+
               <div className="space-y-1">
-                <label className="font-bold text-slate-600 uppercase">Class Section</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Grade 11 - STEM A"
-                  value={newStudentSection}
-                  onChange={(e) => setNewStudentSection(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 bg-white rounded-lg focus:outline-none focus:border-[#1F8A8A]"
-                />
+                <label className="font-bold text-slate-600 uppercase">Grade Level *</label>
+                <select
+                  value={newStudentGradeLevel}
+                  onChange={(e) => setNewStudentGradeLevel(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 bg-white rounded-lg focus:outline-none focus:border-[#1F8A8A] cursor-pointer"
+                >
+                  {availableGradeLevels.map(lvl => (
+                    <option key={lvl} value={lvl}>{lvl}</option>
+                  ))}
+                </select>
               </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-600 uppercase">Class Section *</label>
+                <select
+                  value={newStudentSectionName}
+                  onChange={(e) => setNewStudentSectionName(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 bg-white rounded-lg focus:outline-none focus:border-[#1F8A8A] cursor-pointer"
+                >
+                  {sectionsList
+                    .filter(s => s.gradeLevel === newStudentGradeLevel)
+                    .map(s => (
+                      <option key={s.id} value={s.sectionName}>
+                        {s.sectionName} ({s.strand.split(' ')[0]})
+                      </option>
+                    ))}
+                  <option value="custom">Other / Custom Section...</option>
+                </select>
+                {newStudentSectionName === 'custom' && (
+                  <input
+                    type="text"
+                    required
+                    placeholder="Enter section name"
+                    value={newStudentCustomSection}
+                    onChange={(e) => setNewStudentCustomSection(e.target.value)}
+                    className="w-full mt-1.5 px-3 py-1.5 border border-slate-200 bg-white rounded-lg focus:outline-none focus:border-[#1F8A8A] text-xs"
+                  />
+                )}
+              </div>
+
               <div className="space-y-1">
                 <label className="font-bold text-slate-600 uppercase">Assigned Support Track</label>
                 <select
@@ -265,17 +372,18 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ activeTab })
                   <option value="advanced">Advanced Challenge</option>
                 </select>
               </div>
+
               <div className="flex gap-2">
                 <button
                   type="submit"
-                  className="w-full py-2 bg-[#1F8A8A] hover:bg-[#177575] text-white font-bold rounded-lg transition-all"
+                  className="w-full py-2 bg-[#1F8A8A] hover:bg-[#177575] text-white font-bold rounded-lg transition-all cursor-pointer shadow-xs"
                 >
                   Save Student
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowAddStudentForm(false)}
-                  className="px-3 py-2 border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-lg"
+                  className="px-3 py-2 border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-lg cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -351,13 +459,42 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ activeTab })
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => {
+                              const userObj = (state.users || []).find(u => u.id === p.studentId);
+                              const grade = userObj?.gradeLevel || (p.studentSection?.includes('Grade 12') ? 'Grade 12' : 'Grade 11');
+                              const sec = userObj?.section || p.studentSection?.replace(/^Grade \d+ - /, '') || 'STEM A';
+
+                              setAssigningStudent({
+                                id: p.studentId,
+                                name: p.studentName || 'Student',
+                                currentSection: sec,
+                                currentGrade: grade,
+                                track: p.track
+                              });
+                              setAssignGradeLevel(grade);
+                              setAssignSectionName(sec);
+                              setAssignCustomSection('');
+                            }}
+                            className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap shadow-2xs"
+                            title="Assign Section & Grade Level"
+                          >
+                            <Layers className="h-3 w-3 text-emerald-700" />
+                            <span>Assign</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              const userObj = (state.users || []).find(u => u.id === p.studentId);
+                              const grade = userObj?.gradeLevel || (p.studentSection?.includes('Grade 12') ? 'Grade 12' : 'Grade 11');
+                              const sec = userObj?.section || p.studentSection?.replace(/^Grade \d+ - /, '') || 'STEM A';
+
                               setEditStudentId(p.studentId);
                               setEditStudentName(p.studentName || '');
-                              setEditStudentSection(p.studentSection || 'Grade 11 - STEM A');
+                              setEditStudentGradeLevel(grade);
+                              setEditStudentSection(sec);
                               setEditStudentTrack(p.track);
                               setEditStudentScore(String(p.grade || ''));
                             }}
-                            className="p-1.5 border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700 rounded-lg shadow-sm flex items-center justify-center shrink-0 transition-all"
+                            className="p-1.5 border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700 rounded-lg shadow-sm flex items-center justify-center shrink-0 transition-all cursor-pointer"
                             title="Edit Student Information"
                           >
                             <Edit className="h-3.5 w-3.5" />
@@ -928,9 +1065,17 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ activeTab })
         const handleSaveEditStudent = (e: React.FormEvent) => {
           e.preventDefault();
           updateStudentName(editStudentId, editStudentName.trim());
-          updateStudentSection(editStudentId, editStudentSection.trim());
+          
+          const finalSection = editStudentSection === 'custom' 
+            ? (editStudentCustomSection.trim() || 'STEM A') 
+            : editStudentSection;
+          const matchingSec = sectionsList.find(s => s.gradeLevel === editStudentGradeLevel && s.sectionName === finalSection);
+
+          assignStudentSection(editStudentId, finalSection, editStudentGradeLevel, matchingSec?.strand);
           updateUserTrack(editStudentId, editStudentTrack);
-          assignGrade(editStudentId, editStudentScore.trim());
+          if (editStudentScore) {
+            assignGrade(editStudentId, editStudentScore.trim());
+          }
           
           setEditStudentId(null);
         };
@@ -951,7 +1096,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ activeTab })
                 </div>
                 <button
                   onClick={() => setEditStudentId(null)}
-                  className="text-white/80 hover:text-white text-xs font-bold px-2.5 py-1.5 rounded-lg border border-white/20 hover:bg-white/10 transition-all"
+                  className="text-white/80 hover:text-white text-xs font-bold px-2.5 py-1.5 rounded-lg border border-white/20 hover:bg-white/10 transition-all cursor-pointer"
                 >
                   ✕
                 </button>
@@ -973,18 +1118,53 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ activeTab })
                   />
                 </div>
 
-                {/* Class Section (merged) */}
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-500 uppercase tracking-wider block">Class Section</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Grade 11 - STEM A"
-                    value={editStudentSection}
-                    onChange={(e) => setEditStudentSection(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-orange-500 text-slate-800 font-medium"
-                  />
+                {/* Grade Level & Class Section */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-500 uppercase tracking-wider block">Grade Level</label>
+                    <select
+                      value={editStudentGradeLevel}
+                      onChange={(e) => setEditStudentGradeLevel(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 bg-white rounded-lg focus:outline-none focus:border-orange-500 font-medium text-slate-800 cursor-pointer"
+                    >
+                      {availableGradeLevels.map(lvl => (
+                        <option key={lvl} value={lvl}>{lvl}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-500 uppercase tracking-wider block">Class Section</label>
+                    <select
+                      value={editStudentSection}
+                      onChange={(e) => setEditStudentSection(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 bg-white rounded-lg focus:outline-none focus:border-orange-500 font-medium text-slate-800 cursor-pointer"
+                    >
+                      {sectionsList
+                        .filter(s => s.gradeLevel === editStudentGradeLevel)
+                        .map(s => (
+                          <option key={s.id} value={s.sectionName}>
+                            {s.sectionName}
+                          </option>
+                        ))}
+                      <option value="custom">Other / Custom...</option>
+                    </select>
+                  </div>
                 </div>
+
+                {editStudentSection === 'custom' && (
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-500 uppercase tracking-wider block">Custom Section Name</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. STEM C or Rizal"
+                      value={editStudentCustomSection}
+                      onChange={(e) => setEditStudentCustomSection(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-orange-500 text-slate-800 font-medium"
+                    />
+                  </div>
+                )}
 
                 {/* Learning Track & Grade/Score in 2 columns */}
                 <div className="grid grid-cols-2 gap-4">
@@ -1034,15 +1214,134 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ activeTab })
                   <button
                     type="button"
                     onClick={() => setEditStudentId(null)}
-                    className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-lg font-bold uppercase tracking-wider text-[10px]"
+                    className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-lg font-bold uppercase tracking-wider text-[10px] cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg uppercase tracking-wider text-[10px] shadow-sm transition-all"
+                    className="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg uppercase tracking-wider text-[10px] shadow-sm transition-all cursor-pointer"
                   >
                     Save Changes
+                  </button>
+                </div>
+              </form>
+
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Modal: Dedicated Assign Section & Grade Level */}
+      {assigningStudent && (() => {
+        const matchingSec = sectionsList.find(s => s.gradeLevel === assignGradeLevel && s.sectionName === assignSectionName);
+
+        return (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 font-sans animate-fade-in">
+            <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-md flex flex-col overflow-hidden shadow-2xl animate-scale-up">
+              
+              {/* Modal Header */}
+              <div className="p-5 bg-[#17365D] text-white flex justify-between items-center">
+                <div>
+                  <span className="text-[10px] font-bold bg-white/20 text-white px-2 py-0.5 rounded uppercase tracking-wider">
+                    Curriculum Placement
+                  </span>
+                  <h2 className="text-base font-bold font-serif mt-1">
+                    Assign Section & Grade Level
+                  </h2>
+                </div>
+                <button
+                  onClick={() => setAssigningStudent(null)}
+                  className="text-white/80 hover:text-white text-xs font-bold px-2.5 py-1.5 rounded-lg border border-white/20 hover:bg-white/10 transition-all cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Form Body */}
+              <form onSubmit={handleConfirmAssignment} className="p-6 space-y-4 text-xs font-sans">
+                <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Student Researcher</span>
+                  <span className="text-sm font-bold text-slate-900 block">{assigningStudent.name}</span>
+                  <span className="text-[11px] text-slate-500">
+                    Current Placement: <strong>{assigningStudent.currentGrade}</strong> • <strong>{assigningStudent.currentSection}</strong>
+                  </span>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-600 uppercase tracking-wider block">Target Grade Level *</label>
+                  <select
+                    value={assignGradeLevel}
+                    onChange={(e) => setAssignGradeLevel(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white font-medium text-slate-800 focus:outline-none focus:border-[#17365D] cursor-pointer"
+                  >
+                    {availableGradeLevels.map(lvl => (
+                      <option key={lvl} value={lvl}>{lvl}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-600 uppercase tracking-wider block">Target Class Section *</label>
+                  <select
+                    value={assignSectionName}
+                    onChange={(e) => setAssignSectionName(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white font-medium text-slate-800 focus:outline-none focus:border-[#17365D] cursor-pointer"
+                  >
+                    {sectionsList
+                      .filter(s => s.gradeLevel === assignGradeLevel)
+                      .map(sec => (
+                        <option key={sec.id} value={sec.sectionName}>
+                          {sec.sectionName} — {sec.strand} {sec.adviserName ? `(Adviser: ${sec.adviserName})` : ''}
+                        </option>
+                      ))}
+                    <option value="custom">Other / Custom Section...</option>
+                  </select>
+                </div>
+
+                {assignSectionName === 'custom' && (
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-600 uppercase tracking-wider block">Custom Section Name *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. STEM C or Mabini"
+                      value={assignCustomSection}
+                      onChange={(e) => setAssignCustomSection(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:border-[#17365D]"
+                    />
+                  </div>
+                )}
+
+                {matchingSec && (
+                  <div className="p-3 bg-blue-50/70 border border-blue-200/80 rounded-xl text-xs space-y-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-blue-900 font-bold">{matchingSec.gradeLevel} - {matchingSec.sectionName}</span>
+                      <span className="text-blue-700 font-mono text-[10px]">{matchingSec.room || 'Room 304'}</span>
+                    </div>
+                    <p className="text-[11px] text-slate-600">
+                      <strong>Adviser:</strong> {matchingSec.adviserName || 'Mrs. Maria Santos'}
+                    </p>
+                    <p className="text-[10px] text-slate-500">
+                      <strong>Schedule:</strong> {matchingSec.schedule || 'MWF 8:00 AM - 10:00 AM'}
+                    </p>
+                  </div>
+                )}
+
+                {/* Footer Buttons */}
+                <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setAssigningStudent(null)}
+                    className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-xl font-bold uppercase tracking-wider text-[10px] cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-[#17365D] hover:bg-[#112643] text-white font-bold rounded-xl uppercase tracking-wider text-[10px] shadow-xs transition-all cursor-pointer"
+                  >
+                    Save Section Assignment
                   </button>
                 </div>
               </form>
