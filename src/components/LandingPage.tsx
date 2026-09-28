@@ -29,6 +29,8 @@ import {
   FileText
 } from 'lucide-react';
 import { LearningTrack } from '../types';
+import { PWAInstallButton } from './PWAInstallButton';
+import { NetworkStatusIndicator } from './NetworkStatusIndicator';
 
 interface LandingPageProps {
   onSuccess: () => void;
@@ -206,7 +208,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSuccess }) => {
           </div>
         </div>
         
-        <div className="flex items-center gap-4 text-xs font-semibold text-slate-600">
+        <div className="flex items-center gap-3 text-xs font-semibold text-slate-600">
+          <NetworkStatusIndicator />
+          <PWAInstallButton variant="header" />
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg text-slate-700">
             <School className="h-3.5 w-3.5 text-[#17365D]" />
             <span>DepEd Senior High Practical Research 1 & 2</span>
@@ -308,95 +312,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSuccess }) => {
         <div className="lg:col-span-7 flex flex-col justify-center items-center p-6 sm:p-10 lg:p-12 overflow-y-auto">
           
           <div className="w-full max-w-xl space-y-6">
-
-            {/* Quick Sandbox Access Card */}
-            <div className="bg-gradient-to-br from-slate-900 to-[#17365D] text-white rounded-2xl p-5 shadow-lg border border-slate-700/50 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-[#F4B942] text-slate-950 rounded-lg">
-                    <Sparkles className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-white">
-                      Interactive Sandbox Demo Accounts
-                    </h3>
-                    <p className="text-[11px] text-slate-300">
-                      Explore WriteWise from any user perspective with 1-click authentication
-                    </p>
-                  </div>
-                </div>
-                <span className="text-[10px] bg-white/15 px-2 py-0.5 rounded-full text-slate-200 font-mono font-medium">
-                  Instant Access
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
-                
-                {/* Student Demo Button */}
-                <button
-                  type="button"
-                  onClick={() => handleDemoLogin('student')}
-                  disabled={isLoading}
-                  className="p-3 bg-white/10 hover:bg-white/20 border border-white/15 hover:border-[#1F8A8A] rounded-xl text-left transition-all group cursor-pointer flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#F4B942]">Student</span>
-                      <User className="h-3.5 w-3.5 text-slate-300 group-hover:text-white transition-colors" />
-                    </div>
-                    <span className="font-bold text-white text-xs block">Alex Marasigan</span>
-                    <span className="text-[10px] text-slate-300 block">Grade 11 STEM A</span>
-                  </div>
-                  <div className="mt-2 pt-2 border-t border-white/10 flex items-center justify-between text-[10px] font-bold text-[#1F8A8A] group-hover:text-[#F4B942]">
-                    <span>Enter Student View</span>
-                    <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
-                  </div>
-                </button>
-
-                {/* Teacher Demo Button */}
-                <button
-                  type="button"
-                  onClick={() => handleDemoLogin('teacher')}
-                  disabled={isLoading}
-                  className="p-3 bg-white/10 hover:bg-white/20 border border-white/15 hover:border-[#1F8A8A] rounded-xl text-left transition-all group cursor-pointer flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Teacher</span>
-                      <GraduationCap className="h-3.5 w-3.5 text-slate-300 group-hover:text-white transition-colors" />
-                    </div>
-                    <span className="font-bold text-white text-xs block">Mrs. Maria Santos</span>
-                    <span className="text-[10px] text-slate-300 block">Research Master Mentor</span>
-                  </div>
-                  <div className="mt-2 pt-2 border-t border-white/10 flex items-center justify-between text-[10px] font-bold text-emerald-300 group-hover:text-white">
-                    <span>Enter Teacher View</span>
-                    <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
-                  </div>
-                </button>
-
-                {/* Admin Demo Button */}
-                <button
-                  type="button"
-                  onClick={() => handleDemoLogin('admin')}
-                  disabled={isLoading}
-                  className="p-3 bg-white/10 hover:bg-white/20 border border-white/15 hover:border-purple-400 rounded-xl text-left transition-all group cursor-pointer flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-purple-300">Administrator</span>
-                      <Shield className="h-3.5 w-3.5 text-slate-300 group-hover:text-white transition-colors" />
-                    </div>
-                    <span className="font-bold text-white text-xs block">Dr. Roberto Mendoza</span>
-                    <span className="text-[10px] text-slate-300 block">Division Directorate</span>
-                  </div>
-                  <div className="mt-2 pt-2 border-t border-white/10 flex items-center justify-between text-[10px] font-bold text-purple-300 group-hover:text-white">
-                    <span>Enter Admin View</span>
-                    <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
-                  </div>
-                </button>
-
-              </div>
-            </div>
 
             {/* Main Form Container */}
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200/90 p-6 sm:p-8 space-y-6">
@@ -768,6 +683,95 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSuccess }) => {
                 )}
               </div>
 
+            </div>
+
+            {/* Quick Sandbox Access Card (Placed at the bottom) */}
+            <div className="bg-gradient-to-br from-slate-900 to-[#17365D] text-white rounded-2xl p-5 shadow-lg border border-slate-700/50 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-[#F4B942] text-slate-950 rounded-lg">
+                    <Sparkles className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-white">
+                      Interactive Sandbox Demo Accounts
+                    </h3>
+                    <p className="text-[11px] text-slate-300">
+                      Explore WriteWise from any user perspective with 1-click authentication
+                    </p>
+                  </div>
+                </div>
+                <span className="text-[10px] bg-white/15 px-2 py-0.5 rounded-full text-slate-200 font-mono font-medium">
+                  Instant Access
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                
+                {/* Student Demo Button */}
+                <button
+                  type="button"
+                  onClick={() => handleDemoLogin('student')}
+                  disabled={isLoading}
+                  className="p-3 bg-white/10 hover:bg-white/20 border border-white/15 hover:border-[#1F8A8A] rounded-xl text-left transition-all group cursor-pointer flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#F4B942]">Student</span>
+                      <User className="h-3.5 w-3.5 text-slate-300 group-hover:text-white transition-colors" />
+                    </div>
+                    <span className="font-bold text-white text-xs block">Alex Marasigan</span>
+                    <span className="text-[10px] text-slate-300 block">Grade 11 STEM A</span>
+                  </div>
+                  <div className="mt-2 pt-2 border-t border-white/10 flex items-center justify-between text-[10px] font-bold text-[#1F8A8A] group-hover:text-[#F4B942]">
+                    <span>Enter Student View</span>
+                    <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                </button>
+
+                {/* Teacher Demo Button */}
+                <button
+                  type="button"
+                  onClick={() => handleDemoLogin('teacher')}
+                  disabled={isLoading}
+                  className="p-3 bg-white/10 hover:bg-white/20 border border-white/15 hover:border-[#1F8A8A] rounded-xl text-left transition-all group cursor-pointer flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Teacher</span>
+                      <GraduationCap className="h-3.5 w-3.5 text-slate-300 group-hover:text-white transition-colors" />
+                    </div>
+                    <span className="font-bold text-white text-xs block">Mrs. Maria Santos</span>
+                    <span className="text-[10px] text-slate-300 block">Research Master Mentor</span>
+                  </div>
+                  <div className="mt-2 pt-2 border-t border-white/10 flex items-center justify-between text-[10px] font-bold text-emerald-300 group-hover:text-white">
+                    <span>Enter Teacher View</span>
+                    <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                </button>
+
+                {/* Admin Demo Button */}
+                <button
+                  type="button"
+                  onClick={() => handleDemoLogin('admin')}
+                  disabled={isLoading}
+                  className="p-3 bg-white/10 hover:bg-white/20 border border-white/15 hover:border-purple-400 rounded-xl text-left transition-all group cursor-pointer flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-purple-300">Administrator</span>
+                      <Shield className="h-3.5 w-3.5 text-slate-300 group-hover:text-white transition-colors" />
+                    </div>
+                    <span className="font-bold text-white text-xs block">Dr. Roberto Mendoza</span>
+                    <span className="text-[10px] text-slate-300 block">Division Directorate</span>
+                  </div>
+                  <div className="mt-2 pt-2 border-t border-white/10 flex items-center justify-between text-[10px] font-bold text-purple-300 group-hover:text-white">
+                    <span>Enter Admin View</span>
+                    <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                </button>
+
+              </div>
             </div>
 
             {/* Trust and DepEd Standards Seal */}

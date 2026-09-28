@@ -19,6 +19,8 @@ import { TeacherDashboard } from './components/TeacherDashboard';
 import { AdminDashboard } from './components/AdminDashboard';
 import { AutocompletePlayground } from './components/AutocompletePlayground';
 import { UserProfile } from './components/UserProfile';
+import { PWAInstallButton } from './components/PWAInstallButton';
+import { NetworkStatusIndicator } from './components/NetworkStatusIndicator';
 import { 
   BookOpen, 
   LogOut, 
@@ -127,7 +129,13 @@ function WriteWiseAppContent() {
           </span>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Real-time Network & Auto-Sync Status Indicator */}
+          <NetworkStatusIndicator />
+
+          {/* Cross-platform Install App Button */}
+          <PWAInstallButton variant="header" />
+
           <button
             onClick={() => handleNavigate('profile')}
             className={`flex items-center gap-2.5 p-1.5 sm:px-3 sm:py-1.5 rounded-xl border transition-all text-left ${
@@ -313,11 +321,13 @@ function WriteWiseAppContent() {
               )}
             </div>
 
-            <div className="space-y-1 pt-4 border-t border-slate-100 mt-4">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-3">Session Management</span>
+            <div className="space-y-2 pt-4 border-t border-slate-100 mt-4">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-3">App Installation & Offline</span>
+              <PWAInstallButton variant="sidebar" />
+              
               <button
                 onClick={() => logout()}
-                className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all text-slate-600 hover:bg-red-50 hover:text-red-600"
+                className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all text-slate-600 hover:bg-red-50 hover:text-red-600 cursor-pointer"
                 title="Log out of current account"
               >
                 <LogOut className="h-4 w-4 shrink-0" /> Logout
